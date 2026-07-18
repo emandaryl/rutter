@@ -11,7 +11,6 @@ project (`AGENTS.md`, thin per-tool adapters, `.agent/docs/`, `.agent/features/`
 | Path | What it is |
 |---|---|
 | `rutter/` | The actual skill. `SKILL.md` is what an agent reads and executes; `START-HERE.md` is the human-facing quickstart; `templates/` holds every file template the skill fills in with real, project-specific content. |
-| `rutter.zip` | The packaged skill — unzip into `~/.claude/skills/rutter/` (Claude Code) or `<repo>/rutter/` (any other tool). See `rutter/START-HERE.md` for both install paths. |
 | `rutter-landing.html` | The marketing/landing page. |
 | `rutter-howto.html` | The walkthrough page (linked from the landing page) — a worked example on an existing repo, the greenfield path, and an FAQ. |
 
@@ -32,23 +31,11 @@ Full behavior spec: [`rutter/SKILL.md`](rutter/SKILL.md).
 
 ## Using it
 
-- **Live in Claude Code?** Unzip `rutter.zip` into `~/.claude/skills/rutter/` (global) or
+- **Live in Claude Code?** Copy the `rutter/` folder into `~/.claude/skills/rutter/` (global) or
   `<repo>/.claude/skills/rutter/` (per-project). It triggers itself from then on — no invocation
   sentence needed.
-- **Any other tool** (Cursor, Copilot, Gemini CLI, Windsurf, Aider, …): unzip `rutter.zip` into the
-  repo you want documented as `<repo>/rutter/`, then paste into your assistant:
+- **Any other tool** (Cursor, Copilot, Gemini CLI, Windsurf, Aider, …): copy `rutter/` into the repo
+  you want documented, then paste into your assistant:
   ```
   Read rutter/SKILL.md and follow it against this repository.
   ```
-
-## Regenerating the zip
-
-After editing anything under `rutter/`, rebuild the archive from this directory:
-
-```bash
-find rutter -name ".DS_Store" -delete
-zip -r rutter.zip rutter -x "*.DS_Store" "*.git*"
-```
-
-The `-x "*.git*"` exclusion matters if a `.git/` ever ends up inside `rutter/` — it shouldn't ship
-in the distributed skill.
