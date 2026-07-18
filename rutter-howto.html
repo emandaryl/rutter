@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How to use Rutter — a five-minute passage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0a1017;
+    --ink-2:#0d141d;
+    --surface:#111a25;
+    --surface-2:#15202d;
+    --line:#1d2a39;
+    --line-soft:#16202c;
+    --text:#e9e4d8;
+    --muted:#8d97a4;
+    --muted-2:#5c6674;
+    --brass:#d8a24a;
+    --brass-bright:#eebd6b;
+    --brass-soft:rgba(216,162,74,.13);
+    --seafoam:#5fb8a0;
+    --maxw:880px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--ink);color:var(--text);
+    font-family:'Instrument Sans',system-ui,sans-serif;
+    line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:hidden;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:radial-gradient(circle,var(--line-soft) 1px,transparent 1.4px);
+    background-size:44px 44px;
+    mask-image:radial-gradient(ellipse 100% 55% at 50% 0%,#000 30%,transparent 78%);
+    opacity:.55;
+  }
+  ::selection{background:var(--brass);color:var(--ink)}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px;position:relative;z-index:1}
+  .mono{font-family:'JetBrains Mono',monospace}
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--brass)}
+  h1,h2,h3{font-family:'Fraunces',serif;font-weight:600;line-height:1.15;letter-spacing:-.01em}
+
+  nav{padding:26px 0}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;gap:24px}
+  .wordmark{display:flex;align-items:center;gap:11px;font-family:'Fraunces',serif;font-weight:700;font-size:1.25rem}
+  .back{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:8px 14px;transition:border-color .2s}
+  .back:hover{border-color:var(--brass);color:var(--text)}
+
+  header.hero{padding:48px 0 8px}
+  .hero h1{font-size:clamp(2rem,4.4vw,3rem);margin:16px 0 14px}
+  .hero p{color:var(--muted);font-size:1.05rem;max-width:38em}
+  .hero p b{color:var(--text);font-weight:600}
+
+  section.wrap{padding-top:66px}
+  .step-label{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+  .step-label .n{
+    font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.14em;color:var(--brass);
+    border:1px solid rgba(216,162,74,.4);border-radius:5px;padding:4px 10px;background:var(--brass-soft);
+  }
+  section h2{font-size:clamp(1.45rem,2.8vw,1.9rem);margin-bottom:12px}
+  section > .wrap > p, .lead{color:var(--muted);max-width:44em}
+  .lead b{color:var(--text);font-weight:600}
+
+  /* two-path cards */
+  .paths{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:26px}
+  .path{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px}
+  .path h3{font-size:1rem;margin-bottom:4px}
+  .path .who{font-family:'JetBrains Mono',monospace;font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);display:block;margin-bottom:12px}
+  .path p{font-size:.87rem;color:var(--muted);margin-bottom:12px}
+  .snippet{font-family:'JetBrains Mono',monospace;font-size:.74rem;color:var(--text);background:var(--ink-2);border:1px solid var(--line);border-radius:6px;padding:11px 13px;overflow-x:auto;white-space:pre;line-height:1.8}
+  .snippet .c{color:var(--muted-2)}
+  .snippet .q{color:var(--brass-bright)}
+
+  /* transcript */
+  .log{margin-top:28px;border:1px solid var(--line);border-radius:12px;background:var(--ink-2);overflow:hidden}
+  .log-bar{display:flex;align-items:center;gap:8px;padding:12px 18px;border-bottom:1px solid var(--line);background:var(--surface)}
+  .log-bar .dot{width:9px;height:9px;border-radius:50%;background:var(--line)}
+  .log-bar .dot:first-child{background:var(--brass)}
+  .log-bar span.title{margin-left:8px;font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.1em;color:var(--muted-2)}
+  .turn{padding:18px 22px;border-top:1px solid var(--line-soft)}
+  .turn:first-of-type{border-top:none}
+  .turn .who{font-family:'JetBrains Mono',monospace;font-size:.64rem;letter-spacing:.16em;display:block;margin-bottom:8px}
+  .turn.dev .who{color:var(--seafoam)}
+  .turn.rutter .who{color:var(--brass)}
+  .turn p{font-size:.9rem;color:var(--muted);max-width:none}
+  .turn p b{color:var(--text);font-weight:600}
+  .turn .choices{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--seafoam);margin-top:8px;letter-spacing:.06em}
+  .turn pre{font-family:'JetBrains Mono',monospace;font-size:.76rem;line-height:1.85;color:var(--muted);margin-top:10px;white-space:pre;overflow-x:auto}
+  .turn pre b{color:var(--text);font-weight:500}
+  .aside{
+    margin-top:20px;border-left:3px solid var(--brass);background:var(--surface);
+    border-radius:0 10px 10px 0;padding:16px 20px;font-size:.9rem;color:var(--muted);max-width:44em;
+  }
+  .aside b{color:var(--text);font-weight:600}
+
+  /* after-the-run cards */
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:26px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px}
+  .card h3{font-size:.98rem;margin-bottom:8px}
+  .card p{font-size:.87rem;color:var(--muted)}
+  .card .snippet{margin-top:12px}
+
+  /* faq */
+  .faq{margin-top:26px;display:flex;flex-direction:column;gap:0;border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+  .qa{padding:22px 26px;border-top:1px solid var(--line-soft)}
+  .qa:first-child{border-top:none}
+  .qa h3{font-size:.98rem;margin-bottom:6px}
+  .qa p{font-size:.89rem;color:var(--muted);max-width:none}
+  .qa p .mono{font-size:.8rem;color:var(--text)}
+
+  .foot-cta{margin-top:96px;border-top:1px solid var(--line-soft);background:linear-gradient(180deg,transparent,rgba(216,162,74,.05))}
+  .foot-inner{padding:70px 0 50px;text-align:center}
+  .foot-inner h2{font-size:clamp(1.6rem,3vw,2.2rem);max-width:20em;margin:14px auto 26px}
+  .btn{
+    display:inline-flex;align-items:center;gap:10px;border-radius:8px;
+    padding:12px 20px;font-weight:600;font-size:.95rem;transition:transform .15s,background .2s,border-color .2s;
+  }
+  .btn-primary{background:var(--brass);color:#1a1206}
+  .btn-primary:hover{background:var(--brass-bright);transform:translateY(-1px)}
+  .btn-ghost{border:1px solid var(--line);color:var(--text);margin-left:10px}
+  .btn-ghost:hover{border-color:var(--muted-2)}
+  footer{padding:32px 0;color:var(--muted-2);font-size:.82rem;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+
+  .reveal{opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s ease}
+  .reveal.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    .reveal{opacity:1;transform:none;transition:none}
+    .btn{transition:none}
+  }
+  a:focus-visible{outline:2px solid var(--brass);outline-offset:3px;border-radius:6px}
+  @media (max-width:700px){
+    .paths,.cards{grid-template-columns:1fr}
+    .btn-ghost{margin-left:0;margin-top:10px}
+  }
+</style>
+</head>
+<body>
+
+<nav class="wrap">
+  <div class="nav-inner">
+    <a class="wordmark" href="rutter-landing.html" aria-label="Back to Rutter home">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true">
+        <circle cx="13" cy="13" r="11.5" stroke="#d8a24a" stroke-width="1.4"/>
+        <path d="M13 3.5 L15 13 L13 22.5 L11 13 Z" fill="#d8a24a"/>
+        <path d="M3.5 13 L13 11 L22.5 13 L13 15 Z" fill="#8d97a4" fill-opacity=".55"/>
+        <circle cx="13" cy="13" r="1.6" fill="#0a1017" stroke="#eebd6b" stroke-width="1"/>
+      </svg>
+      Rutter
+    </a>
+    <a class="back" href="rutter-landing.html">← Rutter home</a>
+  </div>
+</nav>
+
+<header class="hero wrap">
+  <span class="eyebrow">How to</span>
+  <h1>Your first passage, in five minutes.</h1>
+  <p>This walkthrough runs Rutter on a real repo, end to end — so you see exactly what it asks, what it writes, and where your hands stay on the wheel the whole time. <b>Nothing here is automatic except detection; everything written was approved by you first.</b></p>
+</header>
+
+<section class="wrap">
+  <div class="step-label"><span class="n">STEP 1</span></div>
+  <h2>Get Rutter aboard — two ways, same files.</h2>
+  <p class="lead">One zip, one <span class="mono">START-HERE.md</span> inside. Pick your path:</p>
+  <div class="paths reveal">
+    <div class="path">
+      <h3>Install as a skill</h3>
+      <span class="who">Claude Code · install once, use everywhere</span>
+      <p>Unzip into your skills folder. Rutter now triggers itself whenever you ask for agent docs, in any repo you open.</p>
+      <div class="snippet"><span class="c"># global — every project</span>
+~/.claude/skills/rutter/
+<span class="c"># or per-project</span>
+&lt;repo&gt;/.claude/skills/rutter/</div>
+    </div>
+    <div class="path">
+      <h3>Drop into a repo</h3>
+      <span class="who">Cursor · Copilot · Gemini CLI · Windsurf · any tool</span>
+      <p>Unzip straight into the repo you want documented, then paste one sentence into your assistant:</p>
+      <div class="snippet">&lt;repo&gt;/rutter/
+<span class="c"># then paste:</span>
+<span class="q">"Read rutter/SKILL.md and follow it
+ against this repository."</span></div>
+    </div>
+  </div>
+  <div class="aside"><b>Which should you pick?</b> If you live in Claude Code, install the skill — it stays out of your repos entirely. The drop-in folder is for everything else, and it's disposable: delete it after the run or keep it for re-runs.</div>
+</section>
+
+<section class="wrap">
+  <div class="step-label"><span class="n">STEP 2</span></div>
+  <h2>Watch a real run — an existing repo.</h2>
+  <p class="lead">Here's Rutter on an existing web app. Notice the rhythm: <b>propose → your call → execute → report</b>, one document at a time. This transcript is abridged but the shape is exact.</p>
+
+  <div class="log reveal" aria-label="Example session transcript">
+    <div class="log-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="title">SESSION — my-shop-app/</span></div>
+
+    <div class="turn dev">
+      <span class="who">YOU</span>
+      <p>Read rutter/SKILL.md and follow it against this repository.</p>
+    </div>
+
+    <div class="turn rutter">
+      <span class="who">RUTTER</span>
+      <p><b>Detection:</b> this looks like an existing project — a Next.js 14 frontend and a FastAPI backend in one repo, pnpm + pip, pytest present, GitHub Actions CI. I'll run in <b>existing mode</b>: document what's here.</p>
+      <p style="margin-top:8px"><b>Task 1</b> is discovery: I'll scan the structure and report my findings before writing anything.</p>
+      <span class="choices">PROCEED · ADJUST · SKIP</span>
+    </div>
+
+    <div class="turn dev">
+      <span class="who">YOU</span>
+      <p>Proceed.</p>
+    </div>
+
+    <div class="turn rutter">
+      <span class="who">RUTTER</span>
+      <p><b>Discovery findings</b> — correct anything before I document it:</p>
+      <pre>stack     <b>Next.js 14 (app router) · FastAPI · Postgres</b>
+layout    <b>web/</b> frontend · <b>api/</b> backend · shared nothing
+tests     pytest in api/tests — web/ has none
+commands  <b>pnpm dev · uvicorn main:app · pytest</b>
+unknown   deployment target — I'll mark it TODO(you)</pre>
+      <p style="margin-top:10px"><b>Task 2:</b> generate AGENTS.md + the four adapters from these facts.</p>
+      <span class="choices">PROCEED · ADJUST · SKIP</span>
+    </div>
+
+    <div class="turn dev">
+      <span class="who">YOU</span>
+      <p>Adjust — deployment is Railway, both services. And add a rule: never touch <b>api/migrations/</b> by hand.</p>
+    </div>
+
+    <div class="turn rutter">
+      <span class="who">RUTTER</span>
+      <p>Noted both — deployment recorded, and the migrations rule goes in AGENTS.md under hard rules. <b>Done — created:</b></p>
+      <pre><b>AGENTS.md</b>          CLAUDE.md · GEMINI.md
+.cursor/rules/     .github/copilot-instructions.md</pre>
+      <p style="margin-top:10px"><b>Task 3:</b> .agent/docs/ARCHITECTURE.md — it will describe the two-service layout, request flow web→api→Postgres, and the directory map.</p>
+      <span class="choices">PROCEED · ADJUST · SKIP</span>
+    </div>
+
+    <div class="turn dev">
+      <span class="who">YOU</span>
+      <p>Proceed. And when you get to TESTING.md, skip it — test strategy is changing next sprint.</p>
+    </div>
+
+    <div class="turn rutter">
+      <span class="who">RUTTER</span>
+      <p>Understood — TESTING.md will be skipped. <i style="color:var(--muted-2)">…several tasks later…</i></p>
+      <p style="margin-top:8px"><b>Final verification:</b></p>
+      <pre>✓ AGENTS.md — all 9 links resolve
+✓ .agent/docs/ — 4 of 5 (TESTING skipped, by you)
+✓ .agent/features/ + skills/ — scaffolded, INDEX matches
+✓ no invented facts — 0 TODO(you) left (deployment resolved via your input)</pre>
+      <p style="margin-top:10px">Passage complete. You can delete <span class="mono">rutter/</span>, keep it for re-runs, or gitignore it.</p>
+    </div>
+  </div>
+
+  <div class="aside"><b>The wrong-guess safety net:</b> because detection is announced in the very first proposal, a mistake ("this looks like a Django app" when it's Flask) gets corrected before a single file exists — that's the point of checking in every task instead of once.</div>
+</section>
+
+<section class="wrap">
+  <div class="step-label"><span class="n">STEP 3</span></div>
+  <h2>No code yet? Greenfield works the same way.</h2>
+  <p class="lead">Point Rutter at an empty folder and detection flips to greenfield: instead of scanning, Task 1 becomes a short intake — what you're building, for whom, roughly how. Then the same loop runs, but the defaults shift toward the planning side: <b>.agent/features/</b> gets seeded with your initial feature folders, each with a FEATURE.md and a TASKS.md of stable-ID tasks. When you later tell any agent <span class="mono" style="color:var(--text)">“continue Task 1.2”</span>, it knows exactly what you mean — that's your docs working.</p>
+</section>
+
+<section class="wrap">
+  <div class="step-label"><span class="n">STEP 4</span></div>
+  <h2>After the run — how the docs get used.</h2>
+  <div class="cards reveal">
+    <div class="card">
+      <h3>Start every agent session the same way</h3>
+      <p>In any tool, any model, the session-opening line is now identical across all your projects:</p>
+      <div class="snippet"><span class="q">"Read AGENTS.md. Then continue Task 2.1
+ of the checkout feature."</span></div>
+    </div>
+    <div class="card">
+      <h3>Keep it current with re-runs</h3>
+      <p>Stack changed? New feature landed? Run Rutter again — it proposes updates task by task and only touches managed sections, so your hand edits survive.</p>
+      <div class="snippet"><span class="c"># managed markers guard your edits</span>
+&lt;!-- rutter:begin --&gt; … &lt;!-- rutter:end --&gt;</div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap">
+  <div class="step-label"><span class="n">FAQ</span></div>
+  <h2>Short answers to fair questions.</h2>
+  <div class="faq reveal">
+    <div class="qa">
+      <h3>Which assistants does it work with?</h3>
+      <p>Any agent that can read files and follow instructions — Claude Code (native skill), Cursor, Copilot, Gemini CLI, Codex, Windsurf, Aider. There's no tool-specific vocabulary inside, and no network access needed: the whole skill is self-contained markdown.</p>
+    </div>
+    <div class="qa">
+      <h3>Does it need to run scripts or install anything?</h3>
+      <p>No. Discovery is just reading files — the same Read/Grep/list-files calls any coding agent already has — so it works identically wherever the skill itself can run. There's no separate scanner to install and nothing extra to fail.</p>
+    </div>
+    <div class="qa">
+      <h3>Will it invent things about my project?</h3>
+      <p>No — that's a hard rule. Every statement in the generated docs traces to what discovery found or what you said at a check-in. Anything unknown is marked <span class="mono">TODO(you)</span>, never guessed — so it's always clear whose job it is to fill the gap.</p>
+    </div>
+    <div class="qa">
+      <h3>I don't want all the documents.</h3>
+      <p>Then don't approve them — <b>skip</b> is a first-class answer at every proposal. There's no profile to opt out of in advance; evidence sets the starting defaults (a doc only gets proposed if discovery actually found something to base it on), and the check-ins are where you make the final call, document by document.</p>
+    </div>
+    <div class="qa">
+      <h3>How is this different from Keel?</h3>
+      <p>Keel is the autonomous builder for non-coders: one idea, one confirmation, a finished app. Rutter is the interactive doc generator for developers: task-by-task check-ins, and the output is the documentation set — not a built app. Keel sails for you; Rutter keeps you at the helm.</p>
+    </div>
+  </div>
+</section>
+
+<div class="foot-cta">
+  <div class="wrap foot-inner">
+    <span class="eyebrow">Ready when you are</span>
+    <h2>One run per repo, and every agent arrives already knowing the waters.</h2>
+    <div>
+      <a class="btn btn-primary" href="rutter-landing.html#get">Get Rutter</a>
+      <a class="btn btn-ghost" href="rutter-landing.html#standard">See the standard</a>
+    </div>
+  </div>
+  <div class="wrap">
+    <footer>
+      <span>Rutter — sailing directions for AI coding agents.</span>
+      <span class="mono">Keel sails for you. Rutter keeps you at the helm.</span>
+    </footer>
+  </div>
+</div>
+
+<script>
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const els = document.querySelectorAll('.reveal');
+  if (prefersReduced || !('IntersectionObserver' in window)) {
+    els.forEach(el => el.classList.add('in'));
+  } else {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+    }, { threshold: 0.12 });
+    els.forEach(el => io.observe(el));
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rutter — sailing directions for AI coding agents</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0a1017;
+    --ink-2:#0d141d;
+    --surface:#111a25;
+    --surface-2:#15202d;
+    --line:#1d2a39;
+    --line-soft:#16202c;
+    --text:#e9e4d8;
+    --muted:#8d97a4;
+    --muted-2:#5c6674;
+    --brass:#d8a24a;
+    --brass-bright:#eebd6b;
+    --brass-soft:rgba(216,162,74,.13);
+    --seafoam:#5fb8a0;
+    --maxw:1120px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--ink);
+    color:var(--text);
+    font-family:'Instrument Sans',system-ui,sans-serif;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  /* faint sounding-grid backdrop, like depth marks on a chart */
+  body::before{
+    content:"";
+    position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:radial-gradient(circle,var(--line-soft) 1px,transparent 1.4px);
+    background-size:44px 44px;
+    mask-image:radial-gradient(ellipse 100% 60% at 50% 0%,#000 30%,transparent 78%);
+    opacity:.55;
+  }
+  ::selection{background:var(--brass);color:var(--ink)}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px;position:relative;z-index:1}
+  .mono{font-family:'JetBrains Mono',monospace}
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:.72rem;font-weight:500;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--brass);
+  }
+  h1,h2,h3{font-family:'Fraunces',serif;font-weight:600;line-height:1.12;letter-spacing:-.01em}
+
+  /* ---------- nav ---------- */
+  nav{padding:26px 0}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;gap:24px}
+  .wordmark{display:flex;align-items:center;gap:11px;font-family:'Fraunces',serif;font-weight:700;font-size:1.25rem;letter-spacing:.01em}
+  .wordmark svg{display:block}
+  .nav-links{display:flex;gap:28px;font-size:.9rem;color:var(--muted)}
+  .nav-links a:hover{color:var(--text)}
+  .nav-cta{
+    font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:500;
+    border:1px solid var(--line);border-radius:6px;padding:8px 14px;color:var(--text);
+    transition:border-color .2s,background .2s;
+  }
+  .nav-cta:hover{border-color:var(--brass);background:var(--brass-soft)}
+
+  /* ---------- hero ---------- */
+  .hero{padding:64px 0 30px}
+  .hero-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:56px;align-items:center}
+  .hero h1{font-size:clamp(2.3rem,4.6vw,3.5rem);margin:18px 0 8px}
+  .hero h1 .accent{color:var(--brass-bright);font-style:italic;font-weight:700}
+  .hero .sub{color:var(--muted);font-size:1.08rem;max-width:34em;margin:16px 0 30px}
+  .hero .sub strong{color:var(--text);font-weight:600}
+  .cta-row{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+  .btn{
+    display:inline-flex;align-items:center;gap:10px;border-radius:8px;
+    padding:12px 20px;font-weight:600;font-size:.95rem;
+    transition:transform .15s,background .2s,border-color .2s;
+  }
+  .btn-primary{background:var(--brass);color:#1a1206}
+  .btn-primary:hover{background:var(--brass-bright);transform:translateY(-1px)}
+  .btn-ghost{border:1px solid var(--line);color:var(--text)}
+  .btn-ghost:hover{border-color:var(--muted-2)}
+  .invoke{
+    margin-top:26px;display:inline-flex;align-items:center;gap:12px;
+    background:var(--ink-2);border:1px solid var(--line);border-radius:8px;
+    padding:11px 16px;font-family:'JetBrains Mono',monospace;font-size:.82rem;color:var(--muted);
+  }
+  .invoke .prompt{color:var(--seafoam)}
+  .invoke .cmd{color:var(--text)}
+
+  /* the chart — signature element */
+  .chart-frame{
+    position:relative;background:var(--ink-2);
+    border:1px solid var(--line);border-radius:12px;padding:10px;
+    box-shadow:0 30px 80px -30px rgba(0,0,0,.7);
+  }
+  .chart-frame::after{
+    content:"REPO CHART Nº 1 — SOUNDINGS IN CONTEXT TOKENS";
+    position:absolute;bottom:18px;left:22px;
+    font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:.14em;color:var(--muted-2);
+  }
+  .chart-frame svg{display:block;width:100%;height:auto;border-radius:8px}
+
+  /* ---------- problem strip ---------- */
+  .strip{border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);margin-top:70px;background:linear-gradient(180deg,rgba(216,162,74,.04),transparent)}
+  .strip-inner{display:grid;grid-template-columns:auto 1fr;gap:40px;align-items:center;padding:34px 0}
+  .strip h2{font-size:1.5rem;white-space:nowrap}
+  .strip p{color:var(--muted);max-width:52em}
+  .strip p strong{color:var(--text)}
+
+  /* ---------- sections ---------- */
+  section.wrap{padding-top:88px}
+  .sec-head{max-width:44em;margin-bottom:44px}
+  .sec-head h2{font-size:clamp(1.7rem,3vw,2.3rem);margin:14px 0 12px}
+  .sec-head p{color:var(--muted)}
+
+  /* manifest / output */
+  .manifest{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .man-col{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px 22px 18px;display:flex;flex-direction:column}
+  .man-col h3{font-size:1.02rem;margin-bottom:4px}
+  .man-col .role{font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);margin-bottom:14px}
+  .tree{font-family:'JetBrains Mono',monospace;font-size:.78rem;line-height:1.9;color:var(--muted);white-space:pre;overflow-x:auto}
+  .tree b{color:var(--text);font-weight:500}
+  .tree i{color:var(--muted-2);font-style:normal}
+  .man-note{margin-top:auto;padding-top:14px;font-size:.83rem;color:var(--muted-2);border-top:1px dashed var(--line);margin-top:16px}
+  .man-note em{color:var(--muted);font-style:normal}
+
+  /* one home rule */
+  .rule-card{
+    background:var(--surface);border:1px solid var(--line);border-radius:14px;
+    padding:40px;display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:48px;align-items:center;
+  }
+  .rule-card h2{font-size:clamp(1.5rem,2.6vw,2rem);margin:12px 0 14px}
+  .rule-card p{color:var(--muted)}
+  .pointer-list{list-style:none;display:flex;flex-direction:column;gap:12px}
+  .pointer-list li{
+    display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;
+    font-family:'JetBrains Mono',monospace;font-size:.78rem;
+    background:var(--ink-2);border:1px solid var(--line);border-radius:8px;padding:12px 16px;color:var(--muted);
+  }
+  .pointer-list .from{text-align:right;color:var(--text)}
+  .pointer-list .arrow{color:var(--brass);letter-spacing:-.05em}
+  .pointer-list .to{color:var(--seafoam)}
+
+  /* passage / phases */
+  .legs{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+  .leg{padding:26px 24px 30px;border-left:1px solid var(--line)}
+  .leg:first-child{border-left:none}
+  .leg .bearing{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.16em;color:var(--brass);display:block;margin-bottom:12px}
+  .leg h3{font-size:1.05rem;margin-bottom:8px}
+  .leg p{font-size:.88rem;color:var(--muted)}
+  .leg .halt{display:inline-block;margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:.64rem;letter-spacing:.12em;color:var(--seafoam);border:1px dashed rgba(95,184,160,.4);border-radius:4px;padding:3px 8px}
+  .entry-note{margin-top:18px;font-size:.88rem;color:var(--muted-2)}
+  .entry-note b{color:var(--muted);font-weight:600}
+
+  /* crews */
+  .crew-row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:26px}
+  .crew{
+    font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--muted);
+    border:1px solid var(--line);border-radius:999px;padding:8px 18px;background:var(--ink-2);
+  }
+  .universal{
+    background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--brass);
+    border-radius:10px;padding:22px 26px;max-width:46em;
+  }
+  .universal p{color:var(--muted);font-size:.92rem;margin-top:8px}
+  .universal .line{font-family:'JetBrains Mono',monospace;font-size:.86rem;color:var(--text)}
+  .universal .line .q{color:var(--brass-bright)}
+
+  /* profiles */
+  .profiles{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .profile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px}
+  .profile.featured{border-color:rgba(216,162,74,.5);background:linear-gradient(180deg,var(--brass-soft),var(--surface) 55%)}
+  .profile h3{font-size:1.05rem;display:flex;align-items:baseline;justify-content:space-between}
+  .profile h3 .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.14em;color:var(--brass);text-transform:uppercase}
+  .profile p{font-size:.88rem;color:var(--muted);margin:10px 0 14px}
+  .profile ul{list-style:none;font-family:'JetBrains Mono',monospace;font-size:.74rem;line-height:2;color:var(--muted-2)}
+  .profile ul b{color:var(--muted);font-weight:500}
+
+  /* get paths */
+  .paths{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:860px;margin:0 auto 34px;text-align:left}
+  .path{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px}
+  .path h3{font-size:1rem;margin-bottom:4px}
+  .path .who{font-family:'JetBrains Mono',monospace;font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);display:block;margin-bottom:12px}
+  .path p{font-size:.86rem;color:var(--muted);margin-bottom:12px}
+  .path .snippet{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text);background:var(--ink-2);border:1px solid var(--line);border-radius:6px;padding:10px 12px;overflow-x:auto;white-space:pre;line-height:1.8}
+  .path .snippet .c{color:var(--muted-2)}
+  @media (max-width:700px){.paths{grid-template-columns:1fr}}
+
+  /* name story */
+  .story{max-width:40em;margin:0 auto;text-align:center}
+  .story h2{font-size:clamp(1.6rem,2.8vw,2.1rem);margin:14px 0 20px}
+  .story p{color:var(--muted);font-size:1.02rem}
+  .story .passage{
+    font-family:'Fraunces',serif;font-style:italic;font-weight:500;font-size:1.15rem;line-height:1.7;
+    color:var(--text);margin:26px 0;
+  }
+  .story .passage .drop{color:var(--brass-bright)}
+  .rule-flourish{display:flex;align-items:center;gap:14px;justify-content:center;margin-top:30px;color:var(--muted-2)}
+  .rule-flourish::before,.rule-flourish::after{content:"";height:1px;width:90px;background:var(--line)}
+
+  /* footer cta */
+  .foot-cta{margin-top:96px;border-top:1px solid var(--line-soft);background:linear-gradient(180deg,transparent,rgba(216,162,74,.05))}
+  .foot-inner{padding:80px 0 60px;text-align:center}
+  .foot-inner h2{font-size:clamp(1.8rem,3.4vw,2.6rem);max-width:18em;margin:14px auto 26px}
+  .foot-inner .cta-row{justify-content:center}
+  footer{padding:34px 0;color:var(--muted-2);font-size:.82rem;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+
+  /* reveal */
+  .reveal{opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s ease}
+  .reveal.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    .reveal{opacity:1;transform:none;transition:none}
+    .btn{transition:none}
+  }
+
+  /* focus */
+  a:focus-visible,button:focus-visible{outline:2px solid var(--brass);outline-offset:3px;border-radius:6px}
+
+  /* responsive */
+  @media (max-width:980px){
+    .hero-grid{grid-template-columns:1fr;gap:44px}
+    .manifest,.profiles{grid-template-columns:1fr}
+    .legs{grid-template-columns:1fr 1fr}
+    .leg:nth-child(3){border-left:none;border-top:1px solid var(--line)}
+    .leg:nth-child(4){border-top:1px solid var(--line)}
+    .rule-card{grid-template-columns:1fr;gap:28px}
+    .strip-inner{grid-template-columns:1fr;gap:10px}
+    .strip h2{white-space:normal}
+  }
+  @media (max-width:600px){
+    .nav-links{display:none}
+    .legs{grid-template-columns:1fr}
+    .leg{border-left:none;border-top:1px solid var(--line)}
+    .leg:first-child{border-top:none}
+    .pointer-list li{grid-template-columns:1fr;text-align:left;gap:4px}
+    .pointer-list .from{text-align:left}
+  }
+</style>
+</head>
+<body>
+
+<nav class="wrap">
+  <div class="nav-inner">
+    <a class="wordmark" href="#top" aria-label="Rutter home">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none" aria-hidden="true">
+        <circle cx="13" cy="13" r="11.5" stroke="#d8a24a" stroke-width="1.4"/>
+        <path d="M13 3.5 L15 13 L13 22.5 L11 13 Z" fill="#d8a24a"/>
+        <path d="M3.5 13 L13 11 L22.5 13 L13 15 Z" fill="#8d97a4" fill-opacity=".55"/>
+        <circle cx="13" cy="13" r="1.6" fill="#0a1017" stroke="#eebd6b" stroke-width="1"/>
+      </svg>
+      Rutter
+    </a>
+    <div class="nav-links">
+      <a href="#standard">The standard</a>
+      <a href="#passage">How it works</a>
+      <a href="#outcomes">What you get</a>
+      <a href="#name">The name</a>
+      <a href="rutter-howto.html">How to</a>
+    </div>
+    <a class="nav-cta" href="#get">Get the skill</a>
+  </div>
+</nav>
+
+<header class="hero wrap" id="top">
+  <div class="hero-grid">
+    <div>
+      <span class="eyebrow">A skill for agentic coding assistants</span>
+      <h1>Every repo is uncharted water to an agent. <span class="accent">Rutter writes the sailing directions.</span></h1>
+      <p class="sub">One command generates the complete agent-facing doc set — <strong>AGENTS.md, adapters, architecture, setup, features, skills</strong> — the same standard in every project you own. Stack-agnostic, on existing codebases and blank folders alike — <strong>task by task, with you approving every step</strong>.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#get">Run Rutter on a repo</a>
+        <a class="btn btn-ghost" href="#standard">See the standard</a>
+      </div>
+      <div class="invoke" role="note" aria-label="Universal invocation">
+        <span class="prompt">›</span>
+        <span class="cmd">Read rutter/SKILL.md and follow it against this repository.</span>
+      </div>
+    </div>
+
+    <div class="chart-frame reveal" aria-label="Diagram of a repository drawn as a nautical chart">
+      <svg viewBox="0 0 520 430" xmlns="http://www.w3.org/2000/svg" role="img">
+        <defs>
+          <radialGradient id="sea" cx="30%" cy="20%" r="90%">
+            <stop offset="0%" stop-color="#101b28"/>
+            <stop offset="100%" stop-color="#0b121b"/>
+          </radialGradient>
+        </defs>
+        <rect width="520" height="430" fill="url(#sea)"/>
+
+        <!-- rhumb lines radiating from the harbor -->
+        <g stroke="#1d2a39" stroke-width="1">
+          <line x1="120" y1="120" x2="520" y2="30"/>
+          <line x1="120" y1="120" x2="520" y2="150"/>
+          <line x1="120" y1="120" x2="520" y2="300"/>
+          <line x1="120" y1="120" x2="430" y2="430"/>
+          <line x1="120" y1="120" x2="240" y2="430"/>
+          <line x1="120" y1="120" x2="0" y2="330"/>
+          <line x1="120" y1="120" x2="0" y2="60"/>
+        </g>
+
+        <!-- soundings -->
+        <g fill="#3c4756" font-family="JetBrains Mono, monospace" font-size="9">
+          <text x="330" y="70">12</text><text x="415" y="120">9</text>
+          <text x="290" y="180">17</text><text x="200" y="300">7</text>
+          <text x="360" y="330">14</text><text x="80" y="250">21</text>
+          <text x="440" y="250">6</text><text x="150" y="390">11</text>
+        </g>
+
+        <!-- course lines: harbor to marks -->
+        <g stroke="#d8a24a" stroke-width="1.4" stroke-dasharray="5 5" fill="none">
+          <path d="M132 128 L340 96"/>
+          <path d="M132 132 L332 208"/>
+          <path d="M130 136 L262 330"/>
+        </g>
+
+        <!-- harbor: AGENTS.md -->
+        <g>
+          <circle cx="120" cy="120" r="26" fill="#d8a24a" fill-opacity=".12" stroke="#d8a24a" stroke-width="1.4"/>
+          <circle cx="120" cy="120" r="5" fill="#eebd6b"/>
+          <text x="120" y="76" text-anchor="middle" fill="#e9e4d8" font-family="JetBrains Mono, monospace" font-size="12" font-weight="600">AGENTS.md</text>
+          <text x="120" y="92" text-anchor="middle" fill="#8d97a4" font-family="JetBrains Mono, monospace" font-size="8.5" letter-spacing="2">HARBOR · START HERE</text>
+        </g>
+
+        <!-- mark: docs -->
+        <g>
+          <rect x="340" y="72" width="128" height="52" rx="7" fill="#111a25" stroke="#1d2a39"/>
+          <text x="354" y="93" fill="#e9e4d8" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="600">.agent/docs/</text>
+          <text x="354" y="110" fill="#8d97a4" font-family="JetBrains Mono, monospace" font-size="8.5">overview · arch · setup</text>
+          <text x="376" y="64" fill="#d8a24a" font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="1.5">BRG 067°</text>
+        </g>
+
+        <!-- mark: features -->
+        <g>
+          <rect x="332" y="184" width="150" height="52" rx="7" fill="#111a25" stroke="#1d2a39"/>
+          <text x="346" y="205" fill="#e9e4d8" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="600">.agent/features/</text>
+          <text x="346" y="222" fill="#8d97a4" font-family="JetBrains Mono, monospace" font-size="8.5">FEATURE · TASKS · refs</text>
+          <text x="368" y="176" fill="#d8a24a" font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="1.5">BRG 102°</text>
+        </g>
+
+        <!-- mark: skills -->
+        <g>
+          <rect x="212" y="330" width="136" height="52" rx="7" fill="#111a25" stroke="#1d2a39"/>
+          <text x="226" y="351" fill="#e9e4d8" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="600">.agent/skills/</text>
+          <text x="226" y="368" fill="#8d97a4" font-family="JetBrains Mono, monospace" font-size="8.5">reusable procedures</text>
+          <text x="240" y="322" fill="#d8a24a" font-family="JetBrains Mono, monospace" font-size="8" letter-spacing="1.5">BRG 145°</text>
+        </g>
+
+        <!-- adapters: buoys pointing back to harbor -->
+        <g font-family="JetBrains Mono, monospace" font-size="8.5" fill="#5c6674">
+          <g stroke="#2a3646" stroke-width="1" fill="none">
+            <path d="M52 216 L104 146"/>
+            <path d="M40 296 L100 158"/>
+          </g>
+          <circle cx="50" cy="222" r="4" fill="#0b121b" stroke="#5fb8a0"/>
+          <text x="60" y="226" fill="#8d97a4">CLAUDE.md → harbor</text>
+          <circle cx="38" cy="302" r="4" fill="#0b121b" stroke="#5fb8a0"/>
+          <text x="48" y="306" fill="#8d97a4">.cursor → harbor</text>
+        </g>
+
+        <!-- compass rose -->
+        <g transform="translate(452,352)">
+          <circle r="34" fill="none" stroke="#2a3646" stroke-width="1"/>
+          <circle r="24" fill="none" stroke="#1d2a39" stroke-width="1"/>
+          <path d="M0 -30 L5 0 L0 30 L-5 0 Z" fill="#d8a24a"/>
+          <path d="M-30 0 L0 -5 L30 0 L0 5 Z" fill="#5c6674"/>
+          <circle r="3" fill="#0a1017" stroke="#eebd6b" stroke-width="1"/>
+          <text y="-40" text-anchor="middle" fill="#8d97a4" font-family="JetBrains Mono, monospace" font-size="9">N</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</header>
+
+<div class="strip">
+  <div class="wrap strip-inner">
+    <h2>Six projects, six doc formats, zero shared truth.</h2>
+    <p>Every repo documents itself differently — a stray CLAUDE.md here, a half-written README there — so every agent session starts by rediscovering the basics, and every tool sees a different project. <strong>Rutter replaces that with one standard, generated the same way everywhere.</strong></p>
+  </div>
+</div>
+
+<section id="standard" class="wrap">
+  <div class="sec-head">
+    <span class="eyebrow">What Rutter charts</span>
+    <h2>The complete doc set, in one namespaced home.</h2>
+    <p>A short contract at the root, depth under <span class="mono">.agent/</span>, and thin pointers wherever a tool demands its own file. Identical structure in every project — greenfield or ten years old.</p>
+  </div>
+  <div class="manifest">
+    <div class="man-col reveal">
+      <h3>The contract</h3>
+      <span class="role">Root · read first, every task</span>
+      <div class="tree"><b>AGENTS.md</b>        <i>← single source of truth</i>
+CLAUDE.md        <i>← pointer</i>
+GEMINI.md        <i>← pointer</i>
+.cursor/rules/   <i>← pointer</i>
+.github/…        <i>← pointer</i></div>
+      <div class="man-note">Short enough to never be skimmed. <em>Everything long-form lives below, linked by explicit path.</em></div>
+    </div>
+    <div class="man-col reveal">
+      <h3>The depth</h3>
+      <span class="role">.agent/docs/ · how this codebase works</span>
+      <div class="tree"><b>OVERVIEW.md</b>
+<b>ARCHITECTURE.md</b>  <i>← inferred from real code</i>
+<b>SETUP.md</b>
+<b>TESTING.md</b>
+<b>DECISIONS.md</b>    <i>← why, so agents stop undoing it</i></div>
+      <div class="man-note">Grounded in what discovery actually found. <em>Unknowns say TODO(you) — never invented filler.</em></div>
+    </div>
+    <div class="man-col reveal">
+      <h3>The work</h3>
+      <span class="role">.agent/features/ &amp; skills/ · what to do</span>
+      <div class="tree">features/<b>INDEX.md</b>
+features/&lt;name&gt;/
+  <b>FEATURE.md</b>   <i>← what &amp; why</i>
+  <b>TASKS.md</b>     <i>← stable IDs: “continue Task 1.2”</i>
+  references/
+skills/<b>INDEX.md</b> <i>+ procedures</i></div>
+      <div class="man-note">Stable task IDs work in any tool. <em>Any agent, told “continue Task 1.2,” knows exactly what you mean.</em></div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap">
+  <div class="rule-card reveal">
+    <div>
+      <span class="eyebrow">The one rule</span>
+      <h2>One canonical home. Pointers everywhere else.</h2>
+      <p>Content lives in exactly one place. Tool-specific locations only ever contain a pointer to it — so drift isn’t discouraged, it’s structurally impossible. One rule, applied everywhere, easy to keep.</p>
+    </div>
+    <ul class="pointer-list">
+      <li><span class="from">CLAUDE.md · GEMINI.md</span><span class="arrow">──›</span><span class="to">AGENTS.md</span></li>
+      <li><span class="from">.cursor · .github</span><span class="arrow">──›</span><span class="to">AGENTS.md</span></li>
+      <li><span class="from">FEATURE.md links</span><span class="arrow">──›</span><span class="to">references/ · docs/</span></li>
+    </ul>
+  </div>
+</section>
+
+<section id="passage" class="wrap">
+  <div class="sec-head">
+    <span class="eyebrow">The passage</span>
+    <h2>You stay at the helm.</h2>
+    <p>Rutter never sails ahead of you. It detects your project silently, then works task by task — every document proposed before it’s written, with <strong style="color:var(--text)">proceed, adjust, or skip</strong> at each step. Autonomous tools deliver surprises; Rutter delivers exactly what you approved.</p>
+  </div>
+  <div class="legs reveal">
+    <div class="leg">
+      <span class="bearing">STEP 00</span>
+      <h3>Detect</h3>
+      <p>Silent and automatic: code, manifests, git history present? Existing mode — it documents what’s there. Empty folder? Greenfield — a short intake, then docs from your idea. Its conclusion is stated in the very first proposal, so a wrong guess dies immediately.</p>
+    </div>
+    <div class="leg">
+      <span class="bearing">STEP 01</span>
+      <h3>Propose</h3>
+      <p>“Next I’ll generate ARCHITECTURE.md. Based on discovery it will say: &lt;two-line summary&gt;.” Nothing is written yet.</p>
+      <span class="halt">PROCEED · ADJUST · SKIP</span>
+    </div>
+    <div class="leg">
+      <span class="bearing">STEP 02</span>
+      <h3>Execute</h3>
+      <p>Writes only the approved task’s files, from templates, filled only with confirmed facts. Re-runs touch managed sections — your hand edits survive.</p>
+    </div>
+    <div class="leg">
+      <span class="bearing">STEP 03</span>
+      <h3>Report</h3>
+      <p>“Done — created X. Next up: SETUP.md.” Then back to Propose for the next document, until the final verification checklist.</p>
+      <span class="halt">LOOPS PER DOCUMENT</span>
+    </div>
+  </div>
+  <p class="entry-note"><b>Skip is how you shape the output in practice:</b> decline the docs a project doesn’t need, task by task. Existing repos lean on ARCHITECTURE and whichever conditional docs have real evidence; greenfield leans on the FEATURE specs and TASKS the intake seeds — the detected mode sets the defaults, you steer from there.</p>
+</section>
+
+<section class="wrap">
+  <div class="sec-head">
+    <span class="eyebrow">Any crew</span>
+    <h2>Written for every agent, native to none.</h2>
+    <p>No tool-specific vocabulary inside — just “read this file, create that file, run this command.” Claude Code auto-triggers it as a skill; everything else needs exactly one sentence:</p>
+  </div>
+  <div class="crew-row reveal">
+    <span class="crew">Claude Code</span><span class="crew">Cursor</span><span class="crew">Copilot</span><span class="crew">Gemini CLI</span><span class="crew">Codex</span><span class="crew">Windsurf</span><span class="crew">Aider</span>
+  </div>
+  <div class="universal reveal">
+    <div class="line"><span class="q">›</span> “Read rutter/SKILL.md and follow it exactly against this repository.”</div>
+    <p>That’s the whole integration. Every agentic assistant can read a file and follow instructions — so the intelligence lives in plain markdown, self-contained, offline, with no network fetches and no dependencies.</p>
+  </div>
+</section>
+
+<section id="outcomes" class="wrap">
+  <div class="sec-head">
+    <span class="eyebrow">Draw exactly as much water as your repo needs</span>
+    <h2>No presets to pick — evidence decides, you steer with skip.</h2>
+    <p>Every doc is proposed only when discovery actually found something to base it on. There's no profile to choose up front — but here's the shape that decision typically takes:</p>
+  </div>
+  <div class="profiles">
+    <div class="profile reveal">
+      <h3>A CLI tool or script <span class="tag">thin repo</span></h3>
+      <p>No UI, no test suite, no CI — there's just not much evidence to work with yet.</p>
+      <ul><li><b>AGENTS.md</b> + adapters</li><li>— most <b>.agent/docs/</b> skipped, no evidence</li><li>— features created only if you ask</li></ul>
+    </div>
+    <div class="profile featured reveal">
+      <h3>A typical app <span class="tag">most repos</span></h3>
+      <p>Real code across the board — tests, UI, maybe a deploy pipeline.</p>
+      <ul><li><b>AGENTS.md</b> + adapters</li><li><b>.agent/docs/</b> — whichever docs have real evidence</li><li><b>.agent/skills/</b> scaffold</li></ul>
+    </div>
+    <div class="profile reveal">
+      <h3>A greenfield idea <span class="tag">empty folder</span></h3>
+      <p>No code yet — a short intake stands in for discovery.</p>
+      <ul><li>Everything a typical app gets</li><li><b>.agent/features/</b> seeded from your idea</li><li><b>TASKS.md</b> with stable task IDs</li></ul>
+    </div>
+  </div>
+</section>
+
+<section id="name" class="wrap">
+  <div class="story reveal">
+    <span class="eyebrow">Why “Rutter”</span>
+    <h2>Before charts existed, there were rutters.</h2>
+    <p class="passage"><span class="drop">A</span> rutter — from the Portuguese <em>roteiro</em> — was a mariner’s hand-written pilot book: hard-won, closely guarded directions that let any captain navigate waters they had never sailed.</p>
+    <p>Five hundred years later, the problem is the same. Your repo is water an agent has never sailed. Rutter writes down what the pilot knows — so any agent, in any tool, arrives without running aground.</p>
+    <div class="rule-flourish">⚓</div>
+  </div>
+</section>
+
+<div class="foot-cta" id="get">
+  <div class="wrap foot-inner">
+    <span class="eyebrow">Cast off</span>
+    <h2>Chart every repo you own, once, the same way.</h2>
+    <div class="paths">
+      <div class="path reveal">
+        <h3>Install as a skill</h3>
+        <span class="who">Claude Code · once, works on every repo</span>
+        <p>Unzip into your skills folder. From then on, just ask for agent docs in any repo — Rutter triggers itself.</p>
+        <div class="snippet"><span class="c"># global — every project</span>
+~/.claude/skills/rutter/
+<span class="c"># then, in any repo:</span>
+"Generate the agent docs."</div>
+      </div>
+      <div class="path reveal">
+        <h3>Drop into a repo</h3>
+        <span class="who">Cursor · Copilot · Gemini · any tool</span>
+        <p>Unzip into the repo, paste one sentence into your assistant. Delete the folder after, or keep it for re-runs.</p>
+        <div class="snippet">&lt;repo&gt;/rutter/
+<span class="c"># then paste:</span>
+"Read rutter/SKILL.md and follow it
+ against this repository."</div>
+      </div>
+    </div>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="rutter-howto.html">Read the how-to</a>
+      <a class="btn btn-ghost" href="#standard">See the standard</a>
+    </div>
+  </div>
+  <div class="wrap">
+    <footer>
+      <span>Rutter — sailing directions for AI coding agents.</span>
+      <span class="mono">Keel sails for you. Rutter keeps you at the helm.</span>
+    </footer>
+  </div>
+</div>
+
+<script>
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const els = document.querySelectorAll('.reveal');
+  if (prefersReduced || !('IntersectionObserver' in window)) {
+    els.forEach(el => el.classList.add('in'));
+  } else {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+    }, { threshold: 0.15 });
+    els.forEach(el => io.observe(el));
+  }
+</script>
+
+</body>
+</html>
