@@ -244,7 +244,7 @@ and `ARCHITECTURE.md` describes the planned shape from the intake rather than an
 | `SETUP.md` | A real install/run path exists (lockfile, build scripts, env config template) |
 | `TESTING.md` | A test suite/framework is present |
 | `SECURITY.md` | Auth/session handling or sensitive-data handling is present (or stated in intake) |
-| `DECISIONS.md` | Existing ADRs/changelog rationale to migrate in, or a genuinely non-obvious choice actually found in the codebase worth recording now — same evidence bar as the rest of this table, no exceptions |
+| `DECISIONS.md` | Existing ADRs/changelog rationale to migrate in, a genuinely non-obvious choice actually found in the codebase worth recording now, or — greenfield only — a real choice Rutter itself made during intake because the user explicitly delegated it (e.g. "you decide the stack"); same evidence bar as the rest of this table otherwise, no exceptions |
 | `UI.md` | A UI/design-system layer exists |
 | `API.md` | A REST/GraphQL/RPC surface exists (or stated as planned in intake) |
 | `FLOWS.md` | An end-user journey exists (apps — not pure libraries/CLIs/backends with no UI) |

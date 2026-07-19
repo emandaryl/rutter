@@ -164,7 +164,10 @@ instructions block, and the phase/task/prompt content are filled in per feature.
 block must always include, at minimum, rules forbidding hardcoded strings/integers and any
 project-specific logging bypass (see "Logging" above), plus any additional constraints specific to
 that feature. The first phase (`Phase 0`) is conventionally reserved for manual/human setup work
-(creating packages, baseline scaffolding) that an agent should not attempt itself.
+(creating packages, baseline scaffolding) that an agent should not attempt itself. A manual-only
+task still gets the full `Task {N.M}` block and checklist, but its **Agent prompt** line is a fixed
+marker instead of an actual prompt — `**Agent prompt:** Manual step — not for an agent.` — rather
+than improvising a "don't do this" instruction each time one comes up.
 
 ```markdown
 # TASKS.md — {Title}
