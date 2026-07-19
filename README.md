@@ -27,7 +27,8 @@ Every generated file (`AGENTS.md`, each adapter, each `.agent/docs/` file) is wr
 change, a new dependency, a new convention — updates only the content it originally wrote and
 leaves anything hand-edited outside those markers untouched.
 
-Full behavior spec: [`rutter/SKILL.md`](rutter/SKILL.md).
+Full behavior spec: [`rutter/SKILL.md`](rutter/SKILL.md). Maintaining this repo? See
+[`CONTRIBUTING.md`](CONTRIBUTING.md) for the rules and decisions behind it.
 
 ## Using it
 
