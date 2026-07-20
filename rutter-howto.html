@@ -45,7 +45,7 @@
   .eyebrow{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--brass)}
   h1,h2,h3{font-family:'Fraunces',serif;font-weight:600;line-height:1.15;letter-spacing:-.01em}
 
-  nav{padding:26px 0}
+  nav.wrap{padding:26px 28px}
   .nav-inner{display:flex;align-items:center;justify-content:space-between;gap:24px}
   .wordmark{display:flex;align-items:center;gap:11px;font-family:'Fraunces',serif;font-weight:700;font-size:1.25rem}
   .back{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:8px 14px;transition:border-color .2s}
@@ -278,9 +278,9 @@ unknown   deployment target — I'll mark it TODO(you)</pre>
  of the checkout feature."</span></div>
     </div>
     <div class="card">
-      <h3>Keep it current with re-runs</h3>
-      <p>Stack changed? New feature landed? Run Rutter again — it proposes updates task by task and only touches managed sections, so your hand edits survive.</p>
-      <div class="snippet"><span class="c"># managed markers guard your edits</span>
+      <h3>It stays current on its own</h3>
+      <p>Finishing a task already keeps <span class="mono">AGENTS.md</span> and <span class="mono">.agent/docs/</span> honest — a resolved <span class="mono">TODO(you)</span>, a new shared class, a real decision recorded — no separate step. Run Rutter again for the bigger stuff instead: a new conditional doc that now qualifies, a stack migration, adapter changes. Either way, only the content between the markers ever gets touched.</p>
+      <div class="snippet"><span class="c"># markers separate managed content from your hand-added notes</span>
 &lt;!-- rutter:begin --&gt; … &lt;!-- rutter:end --&gt;</div>
     </div>
   </div>

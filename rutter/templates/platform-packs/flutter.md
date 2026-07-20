@@ -3,6 +3,15 @@
 Detected by: `pubspec.yaml` with a `flutter` dependency. This pack is a checklist of what to look
 for and how to phrase it — write what's actually found, not this pack's wording verbatim.
 
+**Ignore the generated platform shells.** `flutter create` scaffolds `android/`, `ios/`, `linux/`,
+`macos/`, `windows/`, and `web/`, plus tooling directories like `.dart_tool/` and `build/` — these
+are generated output, the same category as React Native's own `android/`/`ios/` shells (see the
+React Native note in `SKILL.md` step 3a). Don't walk them for Package Structure and don't treat
+them as hand-maintained source; the real source tree is `lib/` (plus `test/`). Only look inside a
+platform folder if something in it is genuinely hand-edited — a native plugin implementation,
+custom Android/iOS permissions, platform-specific signing config — and even then, describe just
+that, not the whole generated tree.
+
 - **Tech Stack** — Dart SDK version (from `pubspec.yaml` `environment:`); state management
   (Provider, Riverpod, Bloc/Cubit, GetX, plain `setState`); local persistence (Hive, Isar, sqflite,
   `shared_preferences`, `SQLite` via Drift); networking (`http`, `dio`); DI approach (constructor

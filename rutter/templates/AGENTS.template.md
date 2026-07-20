@@ -131,9 +131,9 @@ to actively look for, each only if there's real evidence:
   different, possibly in-progress feature.
 - **Why this matters more here than in most codebases:** features are built by parallel agent
   sessions, one per `.agent/features/<feature>/TASKS.md` (see "To run features in parallel" below).
-  A shared abstraction spanning two feature packages creates a file both sessions need to touch —
-  the first thing that breaks the "sessions don't conflict" guarantee the task-file structure is
-  built around.
+  Branch isolation already has to absorb the shared-file collisions that doc-currency updates can
+  cause on `AGENTS.md`/`.agent/docs/` — a shared *code* abstraction spanning two feature packages
+  would pile an avoidable code-level collision on top of that, for no real benefit this early.
 - A feature's tasks should only ever create or edit files under its own feature package (plus
   genuinely shared, already-established infrastructure everyone already depends on — those are fine
   to *read*, just don't refactor them mid-feature). If implementing a task would require editing
@@ -162,12 +162,20 @@ When creating a `.agent/features/<name>/TASKS.md`, follow this format strictly �
 headings, and status marks exactly as below. Only the title, the project-specific rules in the
 instructions block, and the phase/task/prompt content are filled in per feature. The instructions
 block must always include, at minimum, rules forbidding hardcoded strings/integers and any
-project-specific logging bypass (see "Logging" above), plus any additional constraints specific to
-that feature. The first phase (`Phase 0`) is conventionally reserved for manual/human setup work
+project-specific logging bypass (see "Logging" above), plus the two standing rules that keep
+`AGENTS.md`/`.agent/docs/` current as tasks complete — updating stale content and recording real
+decisions in `DECISIONS.md` (see the instructions block below) — copy both verbatim, neither is
+project-specific. Add any additional constraints specific to that feature on top. The first phase (`Phase 0`) is conventionally reserved for manual/human setup work
 (creating packages, baseline scaffolding) that an agent should not attempt itself. A manual-only
 task still gets the full `Task {N.M}` block and checklist, but its **Agent prompt** line is a fixed
 marker instead of an actual prompt — `**Agent prompt:** Manual step — not for an agent.` — rather
 than improvising a "don't do this" instruction each time one comes up.
+
+This is also why `AGENTS.md` and every file in `.agent/docs/` are wrapped in
+`<!-- rutter:begin -->`/`<!-- rutter:end -->` markers in the first place: so it's always
+unambiguous which content is safe for a task-completing agent (not just Rutter itself) to update
+directly — anything between the markers — versus a human's own hand-added notes outside them,
+which must never be touched.
 
 ```markdown
 # TASKS.md — {Title}
@@ -175,7 +183,21 @@ than improvising a "don't do this" instruction each time one comes up.
 > **Instructions for agents:**
 > - Read `AGENTS.md` and `.agent/features/{name}/FEATURE.md` before starting any task.
 > - Work on ONE task at a time. Do not start the next task until the current one is marked `[x]`.
-> - When a task is complete, mark it `[x]` and add a brief completion note.
+> - Before marking a task `[x]`, check whether its work makes anything in the root `AGENTS.md` or
+>   `.agent/docs/` stale, or resolves a `TODO(you)` there — a new shared class for Key Shared
+>   Utilities, a Package Structure line that's changed, an architecture detail that's now built
+>   instead of planned. If so, update the specific section that changed, right now, as part of
+>   finishing this task — don't defer it to a separate pass. Also update this feature's own
+>   `FEATURE.md` Package Structure section the same way; it's a living section, same as Known
+>   Gotchas.
+> - If this task involved a real, non-obvious technical choice the plan didn't already specify (a
+>   library picked, a pattern adopted, a tradeoff accepted), record it in
+>   `.agent/docs/DECISIONS.md` as a short title, a **Decision:** line, a **Why:** line, and a
+>   **Status: active** line. Create the file with a `# Decisions` heading if it doesn't exist yet
+>   — don't skip the entry just because nothing warranted the file when the docs were first
+>   generated. Same bar either way: genuinely non-obvious, not routine.
+> - When a task is complete, mark it `[x]` and add a brief completion note — mention here if a
+>   root doc got updated too, so there's a record of what changed and why.
 > - Never skip a task. Each task builds on the ones before it.
 > - If a task is blocked, mark it `[!]` and add a `> BLOCKED:` note explaining why.
 > - Request human review before marking any task complete.
@@ -221,12 +243,19 @@ bottom of this file.
 leave the table with just the header, ready for the first feature. Do not invent features. -->
 
 **To work on a feature:** load `AGENTS.md` + the feature's `FEATURE.md` + its `TASKS.md`.
-**To run features in parallel:** open separate sessions, each loading a different feature's files
-— task files are scoped so sessions don't conflict. Keep it that way: a feature's tasks should only
+**To run features in parallel:** give each session its own git branch or worktree — never run two
+feature sessions directly against the same uncommitted working tree. Task files are scoped so
+sessions shouldn't need to touch the same *code*, but the doc-currency rule above (keeping
+`AGENTS.md`/`.agent/docs/` updated as tasks complete) means two sessions genuinely can end up
+editing the same shared file. With separate branches, that's safe: it surfaces as a normal git
+merge, auto-resolved if the edits don't overlap, a visible conflict for a human to resolve if they
+do. Without separate branches, it's not a conflict at all — it's a silent overwrite. Whichever
+session writes `AGENTS.md` second wins, and the first session's update just vanishes with no
+warning. Keep code isolation too, on top of branch isolation: a feature's tasks should only
 create/edit files inside its own package/module. Don't write a task that extracts a shared helper
 out of another feature's existing files, even for obviously-duplicated boilerplate — see "Shared
-abstractions vs. duplication" above. That's the one thing that turns two parallel sessions into a
-merge conflict.
+abstractions vs. duplication" above. Branch isolation protects shared docs; package isolation
+protects code — a parallel run needs both.
 
 ---
 
@@ -327,7 +356,9 @@ them. Enough for a reader to orient before going deeper.}
 
 ## Package Structure
 
-{File tree or table of the feature's classes/files and each one's responsibility.}
+{File tree or table of the feature's classes/files and each one's responsibility. Living section,
+same as Known Gotchas below — update it as part of finishing any task that adds, moves, or removes
+a file, not just once at the start.}
 
 {...deeper sections as needed...}
 
