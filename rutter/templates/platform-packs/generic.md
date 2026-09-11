@@ -1,6 +1,6 @@
 # Platform pack: Generic fallback
 
-Used when no known platform (Android/iOS/React/Flutter) is detected — e.g. a backend service,
+Used when no known platform (Android/iOS/React/Flutter/Python/Go/Rust) is detected — e.g. a backend service,
 CLI tool, library, or a stack not yet covered by a dedicated pack. This pack is a checklist of what
 to look for and how to phrase it — write what's actually found, not this pack's wording verbatim.
 

@@ -11,6 +11,7 @@ project (`AGENTS.md`, thin per-tool adapters, `.agent/docs/`, `.agent/features/`
 | Path | What it is |
 |---|---|
 | `rutter/` | The actual skill. `SKILL.md` is what an agent reads and executes; `START-HERE.md` is the human-facing quickstart; `templates/` holds every file template the skill fills in with real, project-specific content. |
+| `rutter-doctor/` | The health-check skill. Audits an existing context system for drift, broken markers, dead links, gaps, and budget bloat — completely read-only. |
 | `rutter-landing.html` | The marketing/landing page. |
 | `rutter-howto.html` | The walkthrough page (linked from the landing page) — a worked example on an existing repo, the greenfield path, and an FAQ. |
 
@@ -40,3 +41,21 @@ Full behavior spec: [`rutter/SKILL.md`](rutter/SKILL.md). Maintaining this repo?
   ```
   Read rutter/SKILL.md and follow it against this repository.
   ```
+- **Auditing an existing repo for drift?** Install or copy `rutter-doctor/` alongside your project,
+  then run Doctor: `Read rutter-doctor/SKILL.md and follow it against this repository.` (or simply
+  ask Claude Code: *"run rutter doctor"*).
+
+## Effortless maintenance with any agent
+
+Once Rutter has charted your repository, ongoing maintenance becomes dramatically simpler. You don't have to re-explain the architecture, hunt for files, or paste 50 lines of context. Just command any agent in shorthand:
+
+```
+Read AGENTS, {feature} and fix {issue}
+Read AGENTS, {feature} and work on {task}
+```
+
+For example:
+- `"Read AGENTS, auth and fix the token refresh race condition"`
+- `"Read AGENTS, checkout and work on adding Apple Pay support"`
+
+Because `AGENTS.md` standardizes feature resolution, any agent immediately knows how to find `.agent/features/<slug>/FEATURE.md`, checks the relevant package structure and Known Gotchas, adheres to existing conventions, and updates the docs when finishing.

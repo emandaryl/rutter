@@ -2,17 +2,18 @@
 name: rutter
 description: >
   Scaffold a new or existing project's AI-agent context system — a root AGENTS.md, thin per-tool
-  adapters (CLAUDE.md, GEMINI.md, .cursor/rules/project.mdc, .github/copilot-instructions.md)
-  that point back to it, plus .agent/docs/, .agent/features/, and .agent/skills/ — by actually
-  reading the target repo (or, on an empty folder, running a short intake) and writing real,
-  project-specific content, not by asking the user to fill in a template. Works task by task: each
-  document is proposed before it's written, and the user can proceed, adjust, or skip at every
-  step. Re-runs on an already-scaffolded repo update only the managed content it originally wrote
-  (guarded by rutter:begin/end markers), leaving anything the user added outside those markers
-  untouched. Use when the user wants to "set up AGENTS.md", "scaffold agent docs", "add a
-  CLAUDE.md/GEMINI.md/Cursor rules/Copilot instructions adapter", "run Rutter on this repo",
-  "re-run Rutter", or start a project that needs agent-facing documentation. Works for any stack —
-  Android, iOS, React/React Native/Next.js, Flutter, or anything else via a generic fallback.
+  adapters (CLAUDE.md, GEMINI.md, .cursor/rules/project.mdc, .github/copilot-instructions.md,
+  .windsurfrules, .clinerules, .aider.conventions.md) that point back to it, plus .agent/docs/,
+  .agent/features/, and .agent/skills/ — by actually reading the target repo (or, on an empty
+  folder, running a short intake) and writing real, project-specific content, not by asking the user
+  to fill in a template. Works task by task: each document is proposed before it's written, and the
+  user can proceed, adjust, or skip at every step. Re-runs on an already-scaffolded repo update only
+  the managed content it originally wrote (guarded by rutter:begin/end markers), leaving anything
+  the user added outside those markers untouched. Use when the user wants to "set up AGENTS.md",
+  "scaffold agent docs", "add a CLAUDE.md/GEMINI.md/Cursor/Copilot/Windsurf/Roo/Aider adapter",
+  "run Rutter on this repo", "re-run Rutter", or start a project that needs agent-facing
+  documentation. Works for any stack — Android, iOS, React/React Native/Next.js, Flutter, Python,
+  Go, Rust, or anything else via a generic fallback.
 ---
 
 # Rutter
@@ -20,13 +21,16 @@ description: >
 Generates a standard `AGENTS.md` + `.agent/docs/` + `.agent/features/` + `.agent/skills/`
 documentation system, retargeted at whatever project this is run against, plus thin per-tool
 adapter files that redirect tool-specific entry points (`CLAUDE.md`, `GEMINI.md`,
-`.cursor/rules/project.mdc`, `.github/copilot-instructions.md`) back to `AGENTS.md`. This is
+`.cursor/rules/project.mdc`, `.github/copilot-instructions.md`, `.windsurfrules`, `.clinerules`,
+`.aider.conventions.md`) back to `AGENTS.md`. This is
 **not** a find-and-replace template engine — the skill reads the target repo's actual manifests,
 source tree, and code (or, if there's no code yet, asks a short intake instead — see step 1), and
 writes what it actually finds. Only the parts of `AGENTS.md` that are process rules (how the
 feature/task-file/skill system works) are copied verbatim; everything else is authored fresh from
 what's really in the repo. Adapters carry zero project-specific content by design — each is a 3-5
 line pointer to `AGENTS.md`, so there is nothing in them that can ever drift out of sync.
+
+*(To audit an already-scaffolded repo for drift, broken markers, dead links, or budget bloat, see `rutter-doctor/SKILL.md`.)*
 
 **The user stays at the helm throughout.** Nothing is written speculatively: every document is
 proposed — a short summary of exactly what it will say — *before* it's created, one task at a
@@ -81,7 +85,8 @@ Before touching anything, check the target repo root for an existing `AGENTS.md`
   when no `AGENTS.md` exists yet or it already carries Rutter's own markers.
 
 Apply the same three-way check independently to each adapter path (`CLAUDE.md`, `GEMINI.md`,
-`.cursor/rules/project.mdc`, `.github/copilot-instructions.md`) and each file under `.agent/docs/`
+`.cursor/rules/project.mdc`, `.github/copilot-instructions.md`, `.windsurfrules`, `.clinerules`,
+`.aider.conventions.md`) and each file under `.agent/docs/`
 — each is checked on its own, so a markerless hand-written `GEMINI.md` doesn't block updating a
 Rutter-managed `CLAUDE.md`, and vice versa. A markerless adapter or doc file is left untouched with
 no prompt (unlike `AGENTS.md`, these are low-stakes enough not to interrupt the run for) — note
@@ -115,9 +120,9 @@ file exists, rather than discovered after docs are already written from the wron
 ### 2. Detect which agent-tool adapters to create
 
 Adapters are thin pointer files at each tool's required path — `CLAUDE.md`, `GEMINI.md`,
-`.cursor/rules/project.mdc`, `.github/copilot-instructions.md` — that redirect that tool's entry
-point back to `AGENTS.md`. Create one only where there's real evidence that tool is actually in
-use in this repo, with one exception:
+`.cursor/rules/project.mdc`, `.github/copilot-instructions.md`, `.windsurfrules`, `.clinerules`,
+`.aider.conventions.md` — that redirect that tool's entry point back to `AGENTS.md`. Create one
+only where there's real evidence that tool is actually in use in this repo, with one exception:
 
 | Adapter | Path | Evidence required |
 |---|---|---|
@@ -125,17 +130,20 @@ use in this repo, with one exception:
 | Gemini CLI | `GEMINI.md` | A `.gemini/` directory, or `gemini-cli`/`@google/gemini-cli` listed as a dependency in a manifest. |
 | Cursor | `.cursor/rules/project.mdc` | A `.cursor/` directory already present (rules, settings, etc.). |
 | GitHub Copilot | `.github/copilot-instructions.md` | An existing `.github/copilot-instructions.md`, or Copilot config in `.vscode/settings.json` (`github.copilot.*` keys). |
+| Windsurf | `.windsurfrules` | A `.windsurf/` directory or `.codeium/` directory already present. |
+| Roo Code / Cline | `.clinerules` | An existing `.clinerules` file or `.roomodes` file. |
+| Aider | `.aider.conventions.md` | An existing `.aider*` config file or conventions file. |
 
 This decision is made automatically here, the same as step 4's conditional-docs table — it isn't
-itself a checkpoint. If **none** of the three non-Claude-Code signals turn up anywhere in the repo
+itself a checkpoint. If **none** of the non-Claude-Code signals turn up anywhere in the repo
 — including the normal case for a greenfield folder, which by definition has no tool fingerprints
 yet — don't guess, and don't silently create zero either: flag this explicitly for Task 2 to ask
 about (step 5). Silently creating zero adapters would defeat the "scaffold agent context from day
 one" use case for a fresh project, so Task 2's proposal must include an explicit question — which
-of Gemini/Cursor/Copilot, if any — rather than treating a plain "proceed" as an answer. The moment
-at least one real signal is found anywhere, skip the question: only create adapters for the tools
-with actual evidence (plus Claude Code, always), and Task 2 just proposes them normally like
-everything else.
+adapters (Gemini/Cursor/Copilot/Windsurf/Roo/Aider), if any — rather than treating a plain "proceed"
+as an answer. The moment at least one real signal is found anywhere, skip the question: only create
+adapters for the tools with actual evidence (plus Claude Code, always), and Task 2 just proposes
+them normally like everything else.
 
 ### 3. Discovery or intake
 
@@ -153,6 +161,9 @@ the React Native note below):
 | `*.xcodeproj` / `*.xcworkspace` / `Package.swift` / `Podfile` **at repo root** (not nested inside an `ios/` subfolder that sits alongside a root `package.json`) | iOS | `templates/platform-packs/ios.md` |
 | `pubspec.yaml` with a `flutter` dependency | Flutter | `templates/platform-packs/flutter.md` |
 | `package.json` with `react`/`next` in deps (no `react-native`) | React | `templates/platform-packs/react.md` |
+| `pyproject.toml`, `uv.lock`, `poetry.lock`, `Pipfile`, `requirements.txt`, or `setup.py` at repo root | Python | `templates/platform-packs/python.md` |
+| `go.mod` at repo root | Go | `templates/platform-packs/go.md` |
+| `Cargo.toml` at repo root | Rust | `templates/platform-packs/rust.md` |
 | None of the above | — | `templates/platform-packs/generic.md` |
 
 **Why the order matters:** a React Native project has its own `android/build.gradle` +
@@ -166,7 +177,11 @@ hand-maintained (e.g. native modules).
 If multiple *genuine* platforms are present in different subdirectories (a real monorepo — e.g. a
 Flutter app next to an unrelated Node backend, not an RN project's own generated shells), note each
 subproject separately later in Package Structure rather than picking one platform for the whole
-repo — you may load more than one pack.
+repo — you may load more than one pack. In this case, apply the signal table above to each
+top-level subdirectory that looks like an independent project root (i.e. treat `<subdir>/` as if it
+were repo root for matching purposes) — one level deep is enough for the common monorepo shape
+(`web/`, `api/`, `apps/<name>/`, etc.); don't recurse further hunting for manifests nested deeper
+than that.
 
 Read the matched pack file now — it's a checklist of what to look for in that ecosystem and the
 vocabulary to describe it with, not text to copy in. The actual content you write always comes
@@ -283,7 +298,7 @@ tasks in the table below **in order, one at a time**:
 | Task | Proposes |
 |---|---|
 | 1. Discovery / Intake | The detected mode (step 1) plus its findings: existing → detected stack, layout, commands to confirm or correct; greenfield → the intake questions (step 3b). This task's answers become the grounding for every task after it. |
-| 2. `AGENTS.md` + adapters | A two-line summary of what `AGENTS.md` will document, and which adapters (step 2) will be created alongside it. Written together since adapters are trivial pointers with no unique content of their own. If step 2 found zero non-Claude-Code signals, this proposal also asks explicitly which of Gemini/Cursor/Copilot to include, if any — a plain "proceed" isn't an answer to that part. |
+| 2. `AGENTS.md` + adapters | A two-line summary of what `AGENTS.md` will document, and which adapters (step 2) will be created alongside it. Written together since adapters are trivial pointers with no unique content of their own. If step 2 found zero non-Claude-Code signals, this proposal also asks explicitly which other adapters (Gemini/Cursor/Copilot/Windsurf/Roo/Aider) to include, if any — a plain "proceed" isn't an answer to that part. |
 | 3…N. One task per selected `.agent/docs/` file | In this fixed order: `OVERVIEW.md`, `ARCHITECTURE.md`, then any of `SETUP/TESTING/SECURITY/DECISIONS/UI/API/FLOWS/DEPLOYMENT.md` selected in step 4. Each proposal is a two-line summary of what that specific doc will say — not the whole set at once. |
 | N+1. `.agent/features/` scaffold | Existing: which pre-existing features (if any, found in step 3a) will be seeded into the index, or confirmation it starts empty. Greenfield: the initial feature slice(s) worked out in step 3b — name each in one line. |
 | N+2. `.agent/skills/` scaffold | Confirms `INDEX.md` will be created (header row only, unless step 3a turned up something worth seeding). |
@@ -334,10 +349,11 @@ for tasks the user approved.
   none existed, or none without markers). Re-run: replace only the content between the existing
   markers with the freshly drafted version; leave anything outside them exactly as written.
 - Each adapter selected in step 2, from `templates/ADAPTER.template.md` with `[FILL: ToolName]`
-  substituted (`Claude Code`, `Gemini CLI`, `Cursor`, `GitHub Copilot`) — Task 2. Same marker rule
-  as `AGENTS.md`: wrap on create, replace only between markers on a re-run, skip untouched if step 0
-  found it markerless. `.cursor/rules/project.mdc` needs Cursor's MDC frontmatter prepended before
-  the (markered) template body, or Cursor won't load it as an active rule:
+  substituted (`Claude Code`, `Gemini CLI`, `Cursor`, `GitHub Copilot`, `Windsurf`, `Roo Code`,
+  `Aider`) — Task 2. Same marker rule as `AGENTS.md`: wrap on create, replace only between markers on
+  a re-run, skip untouched if step 0 found it markerless. `.cursor/rules/project.mdc` needs Cursor's
+  MDC frontmatter prepended before the (markered) template body, or Cursor won't load it as an
+  active rule:
   ```
   ---
   description: Project context pointer
@@ -406,8 +422,8 @@ user decide.
   seeding in step 6, which reuses these same formats rather than a separate greenfield template.
 - `templates/docs/*.template.md` — one stub template per `.agent/docs/` file (10 total; first two
   always used).
-- `templates/platform-packs/{android,ios,react,flutter,generic}.md` — per-stack checklists of what
-  to look for and how to describe it; not fill-in text.
-- `templates/ADAPTER.template.md` — shared body for all four tool adapters; `[FILL: ToolName]`
+- `templates/platform-packs/{android,ios,react,flutter,python,go,rust,generic}.md` — per-stack
+  checklists of what to look for and how to describe it; not fill-in text.
+- `templates/ADAPTER.template.md` — shared body for all tool adapters; `[FILL: ToolName]`
   substituted per file.
 - `templates/SKILLS_INDEX.template.md` — the `.agent/skills/INDEX.md` scaffold.

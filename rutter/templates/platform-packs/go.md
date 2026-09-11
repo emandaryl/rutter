@@ -1,0 +1,11 @@
+# Platform pack: Go
+
+Detected by: `go.mod` at repo root. This pack is a checklist of what to look for and how to phrase it — write what's actually found, not this pack's wording verbatim.
+
+- **Tech Stack** — check `go.mod` for: Go version; web/routing framework (standard library `net/http`, `chi`, `gin`, `fiber`, `echo`, `grpc-go`); persistence/DB driver (`pgx`, `database/sql`, `gorm`, `sqlc`, `ent`, `mongo-go-driver`); test framework (`testing`, `testify`, `gomock`); linter/tooling (`golangci-lint`, `air` for hot reload).
+- **Package Structure** — walk the repository; check for Standard Go Project Layout: `cmd/<app>/main.go` (entry points), `internal/` (private app code: `handler/`, `service/`, `repository/`, `model/`), `pkg/` (code safe for external import), `api/` (OpenAPI/proto specs), `scripts/`.
+- **Architecture Pattern** — describe the real execution flow: transport/handler (HTTP/gRPC decoding, input validation) → service layer (business logic, domain orchestration) → repository layer (database queries/transactions). Note constructor/dependency injection convention (e.g. manual `NewService(...)` functions vs container libraries).
+- **Data Layer Conventions** — connection pool setup (`*sql.DB` or `*pgxpool.Pool`), transaction handling pattern (e.g. context-aware `BeginTx` with deferred rollback), migration tool (`golang-migrate`, `goose`, `atlas`), and generated code conventions (sqlc, ent, or protobuf files).
+- **Coding Conventions** — check for: error handling idiom (`if err != nil`, wrapping with `fmt.Errorf("...: %w", err)`, custom typed/sentinel errors), context propagation (`ctx context.Context` as first parameter in all I/O functions), goroutine lifecycle management (`errgroup.Group`, `sync.WaitGroup`, channel ownership), structured logging (`slog` or `zap` vs `fmt.Println`).
+- **Domain Concepts** — read core structs in `model/`, `domain/`, or entity packages for the domain noun hierarchy.
+- **Conditional docs signals** — API.md if HTTP route definitions, gRPC `.proto` files, or GraphQL schemas exist; SECURITY.md if auth middleware, JWT verification, or TLS config exists; DEPLOYMENT.md if Dockerfile, Kubernetes manifests, or goreleaser config exists; TESTING.md if `*_test.go` files, test fixtures, or integration suites exist.

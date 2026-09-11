@@ -5,6 +5,16 @@
 > Read this file at the start of every session.
 > For feature-specific work, also load the relevant feature doc from `.agent/features/` — see the bottom of this file.
 > For a known recurring procedure, check `.agent/skills/INDEX.md` first — see "Skills" below.
+>
+> **Context Budget:** Keep the project-specific sections above (What This Project Is through Domain
+> Concepts) concise — roughly ~150–200 lines combined. It is a harbor chart and router, not an
+> encyclopedia: long-form guides, full API specs, and deep domain walkthroughs belong in
+> `.agent/docs/` or feature references, linked from here by explicit path, never inlined. This
+> budget covers only the project-specific content — the STANDARD process sections below (Task
+> Files, Feature Docs, Skills, Creating-a-Feature) are fixed, copied-verbatim overhead of roughly
+> 300 lines and don't count against it. A finished `AGENTS.md` therefore typically lands around
+> 450–550 lines total; what matters is that the project-specific portion stays tight, not the
+> whole-file line count.
 
 ---
 <!--
@@ -171,11 +181,10 @@ task still gets the full `Task {N.M}` block and checklist, but its **Agent promp
 marker instead of an actual prompt — `**Agent prompt:** Manual step — not for an agent.` — rather
 than improvising a "don't do this" instruction each time one comes up.
 
-This is also why `AGENTS.md` and every file in `.agent/docs/` are wrapped in
-`<!-- rutter:begin -->`/`<!-- rutter:end -->` markers in the first place: so it's always
-unambiguous which content is safe for a task-completing agent (not just Rutter itself) to update
-directly — anything between the markers — versus a human's own hand-added notes outside them,
-which must never be touched.
+This is also why `AGENTS.md` and every file in `.agent/docs/` are wrapped in Rutter's begin/end
+markers in the first place: so it's always unambiguous which content is safe for a task-completing
+agent (not just Rutter itself) to update directly — anything between the markers — versus a
+human's own hand-added notes outside them, which must never be touched.
 
 ```markdown
 # TASKS.md — {Title}
@@ -287,8 +296,12 @@ authoritative agent-facing reference — more accurate and up to date than `.age
 
 ### Resolving a shorthand feature instruction
 
+Once charted, maintaining the project with any agent is as simple as a one-line command: `"Read AGENTS, {feature} and fix {issue}"` or `"Read AGENTS, {feature} and work on {task}"`.
+
 A request will often arrive as shorthand, not a full path — all of these must resolve the same way:
 
+- `"Read AGENTS, {name} and fix {issue}"`
+- `"Read AGENTS, {name} and work on {task}"`
 - `"Read AGENTS and feature/{name}, then {description}"`
 - `"Read AGENTS and {name}, then {description}"`
 - `"Read AGENTS.md and .agent/features/{slug}/FEATURE.md, then {description}"`
@@ -315,16 +328,21 @@ A request will often arrive as shorthand, not a full path — all of these must 
 A feature may also have a `.agent/features/<name>/TASKS.md` — a phased, checkbox-driven task list
 for an active multi-step piece of work in that feature area. If one exists and the request is
 continuing that work, read it and follow its own instructions header; work through it one task at
-a time and don't skip ahead. Not every feature needs one — only add `TASKS.md` when there's real,
-in-progress multi-step work to track, and remove or archive it once the work is done and the
-feature's own "Known Gotchas"/"Architecture in One Paragraph" sections have been updated to
-reflect the new state.
+a time and don't skip ahead. Not every feature needs one — only add `TASKS.md` when there's real, in-progress multi-step work to
+track, and remove or archive it once the work is done and the feature's own "Known
+Gotchas"/"Architecture in One Paragraph" sections have been updated to reflect the new state. When
+archiving, move it to `.agent/features/<slug>/archive/TASKS-v{N}.md` (e.g. `TASKS-v1.0.md` or
+`TASKS-2026-09.md`) so active context remains lean while preserving a permanent audit trail.
 
 ```
 .agent/features/
 <!-- [FILL: one entry per feature that already exists in the repo (if any were found during setup),
-each with its FEATURE.md / TASKS.md / references/ children — mirror the tree style used in this
-repo's own AGENTS.md. Leave empty (just the bare .agent/features/ line) if no features exist yet. -->
+each with its FEATURE.md / TASKS.md / references/ children (e.g.
+├── <feature-slug>/
+│   ├── FEATURE.md
+│   ├── TASKS.md
+│   └── references/
+). Leave empty (just the bare .agent/features/ line) if no features exist yet. -->
 ```
 
 ### FEATURE.md Format
@@ -377,6 +395,8 @@ rules a future agent must not violate.}
 ```
 
 **Prompting patterns** (all equivalent — see "Resolving a shorthand feature instruction" above):
+- `"Read AGENTS, {feature_name} and fix [issue]."`
+- `"Read AGENTS, {feature_name} and work on [task]."`
 - `"Read AGENTS.md and .agent/features/{slug}/FEATURE.md, then implement [task]."`
 - `"Read AGENTS and feature/{feature_name} and [bug/implementation description]."`
 - `"Read AGENTS and {feature_name} and [bug/implementation description]."`
@@ -461,7 +481,8 @@ Four related but distinct things get added to this doc system over time — use 
 3. **New task file** → only when there's real, in-progress multi-step work to track for that
    feature (not one automatically for every feature) — create `TASKS.md` following the "TASKS.md
    Format" above. Once the work is done, fold any permanent gotchas into the feature's `FEATURE.md`
-   "Known Gotchas" section, then archive or remove the task file.
+   "Known Gotchas" section, then archive it to `.agent/features/<slug>/archive/TASKS-v{N}.md` (or
+   remove it if historical tracking is unneeded).
 4. **New skill** → when a recurring, multi-step *procedure* (not project context — that's a
    feature) needs to be captured so any tool or agent can follow it correctly — create
    `.agent/skills/<slug>/`, write `SKILL.md` following the "SKILL.md format" above, and add its

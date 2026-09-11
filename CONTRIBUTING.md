@@ -10,6 +10,8 @@ formats that keep this repo consistent, for whoever (human or agent) edits it ne
 | `rutter/SKILL.md` | The actual spec. An agent reads and executes this. **Source of truth.** |
 | `rutter/templates/` | Every template `SKILL.md` fills in — the root doc, per-doc stubs, platform packs, adapters, skills index. |
 | `rutter/START-HERE.md` | Human-facing quickstart, read by a person before any agent is invoked. Not read by the agent executing the skill. |
+| `rutter-doctor/SKILL.md` | Health-check skill spec. An agent reads and executes this to audit existing repos for drift. |
+| `rutter-doctor/START-HERE.md` | Human-facing quickstart for Doctor, read by a person before invoking an agent. |
 | `rutter-landing.html`, `rutter-howto.html` | Marketing/prose *description* of what the skill does. Not executable, not read by an agent running Rutter — for humans deciding whether to install it. |
 | `README.md` | Project pitch for this repo. |
 | `rutter.zip` | Personal, local-only convenience artifact. Gitignored, never committed, not documented in README. Rebuild with the command at the bottom of this file. |
@@ -28,7 +30,7 @@ it at its source. Never copy one out "for convenience," even into this file.
 | `FEATURE.md` format — frontmatter, required sections, "Known Gotchas" | `AGENTS.template.md`, "FEATURE.md Format" section |
 | A nested `.agent/skills/<name>/SKILL.md` format (a *generated-repo's* skill file — not this project's own `SKILL.md`) | `AGENTS.template.md`, "SKILL.md format" section |
 | Each `.agent/docs/<NAME>.md` file's own section structure | Its own `rutter/templates/docs/<NAME>.template.md` |
-| Adapter file body (`CLAUDE.md`, `GEMINI.md`, `.cursor/rules/project.mdc`, `.github/copilot-instructions.md`) | `rutter/templates/ADAPTER.template.md` |
+| Adapter file body (`CLAUDE.md`, `GEMINI.md`, `.cursor/rules/project.mdc`, `.github/copilot-instructions.md`, `.windsurfrules`, `.clinerules`, `.aider.conventions.md`) | `rutter/templates/ADAPTER.template.md` |
 | `.agent/skills/INDEX.md` scaffold | `rutter/templates/SKILLS_INDEX.template.md` |
 | Which conditional docs get created at all, and on what evidence | `rutter/SKILL.md` step 4's evidence table |
 

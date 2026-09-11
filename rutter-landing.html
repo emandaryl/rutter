@@ -69,7 +69,7 @@
   .nav-cta:hover{border-color:var(--brass);background:var(--brass-soft)}
 
   /* ---------- hero ---------- */
-  .hero{padding:64px 0 30px}
+  .hero{padding-top:64px;padding-bottom:30px}
   .hero-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:56px;align-items:center}
   .hero h1{font-size:clamp(2.3rem,4.6vw,3.5rem);margin:18px 0 8px}
   .hero h1 .accent{color:var(--brass-bright);font-style:italic;font-weight:700}
@@ -89,9 +89,26 @@
     margin-top:26px;display:inline-flex;align-items:center;gap:12px;
     background:var(--ink-2);border:1px solid var(--line);border-radius:8px;
     padding:11px 16px;font-family:'JetBrains Mono',monospace;font-size:.82rem;color:var(--muted);
+    cursor:pointer;transition:border-color .2s;
   }
+  .invoke:hover{border-color:var(--brass)}
   .invoke .prompt{color:var(--seafoam)}
   .invoke .cmd{color:var(--text)}
+  .invoke .copy-hint{
+    margin-left:8px;font-size:.68rem;color:var(--muted-2);
+    border:1px solid var(--line);border-radius:4px;padding:2px 7px;
+    transition:color .15s,border-color .15s;
+  }
+  .invoke:hover .copy-hint{color:var(--text);border-color:var(--brass-bright)}
+  .copy-btn{
+    position:absolute;top:8px;right:8px;
+    background:rgba(21,32,45,.85);border:1px solid var(--line);border-radius:5px;
+    padding:3px 8px;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);
+    cursor:pointer;transition:color .15s,border-color .15s,background .15s;
+    user-select:none;
+  }
+  .copy-btn:hover{color:var(--text);border-color:var(--brass);background:var(--surface-2)}
+  .copy-btn.copied{color:var(--seafoam);border-color:var(--seafoam)}
 
   /* the chart — signature element */
   .chart-frame{
@@ -108,7 +125,7 @@
 
   /* ---------- problem strip ---------- */
   .strip{border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);margin-top:70px;background:linear-gradient(180deg,rgba(216,162,74,.04),transparent)}
-  .strip-inner{display:grid;grid-template-columns:auto 1fr;gap:40px;align-items:center;padding:34px 0}
+  .strip-inner{display:grid;grid-template-columns:auto 1fr;gap:40px;align-items:center;padding-top:34px;padding-bottom:34px}
   .strip h2{font-size:1.5rem;white-space:nowrap}
   .strip p{color:var(--muted);max-width:52em}
   .strip p strong{color:var(--text)}
@@ -120,8 +137,8 @@
   .sec-head p{color:var(--muted)}
 
   /* manifest / output */
-  .manifest{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-  .man-col{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px 22px 18px;display:flex;flex-direction:column}
+  .manifest{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;width:100%}
+  .man-col{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px 22px 18px;display:flex;flex-direction:column;min-width:0}
   .man-col h3{font-size:1.02rem;margin-bottom:4px}
   .man-col .role{font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);margin-bottom:14px}
   .tree{font-family:'JetBrains Mono',monospace;font-size:.78rem;line-height:1.9;color:var(--muted);white-space:pre;overflow-x:auto}
@@ -173,8 +190,8 @@
   .universal .line .q{color:var(--brass-bright)}
 
   /* profiles */
-  .profiles{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-  .profile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px}
+  .profiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;width:100%}
+  .profile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px;min-width:0}
   .profile.featured{border-color:rgba(216,162,74,.5);background:linear-gradient(180deg,var(--brass-soft),var(--surface) 55%)}
   .profile h3{font-size:1.05rem;display:flex;align-items:baseline;justify-content:space-between}
   .profile h3 .tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.14em;color:var(--brass);text-transform:uppercase}
@@ -183,12 +200,12 @@
   .profile ul b{color:var(--muted);font-weight:500}
 
   /* get paths */
-  .paths{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:860px;margin:0 auto 34px;text-align:left}
-  .path{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px}
+  .paths{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;max-width:860px;margin:0 auto 34px;text-align:left}
+  .path{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px;min-width:0}
   .path h3{font-size:1rem;margin-bottom:4px}
   .path .who{font-family:'JetBrains Mono',monospace;font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);display:block;margin-bottom:12px}
   .path p{font-size:.86rem;color:var(--muted);margin-bottom:12px}
-  .path .snippet{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text);background:var(--ink-2);border:1px solid var(--line);border-radius:6px;padding:10px 12px;overflow-x:auto;white-space:pre;line-height:1.8}
+  .path .snippet{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text);background:var(--ink-2);border:1px solid var(--line);border-radius:6px;padding:10px 54px 10px 12px;position:relative;overflow-x:auto;white-space:pre;line-height:1.8}
   .path .snippet .c{color:var(--muted-2)}
   @media (max-width:700px){.paths{grid-template-columns:1fr}}
 
@@ -206,7 +223,7 @@
 
   /* footer cta */
   .foot-cta{margin-top:96px;border-top:1px solid var(--line-soft);background:linear-gradient(180deg,transparent,rgba(216,162,74,.05))}
-  .foot-inner{padding:80px 0 60px;text-align:center}
+  .foot-inner{padding-top:80px;padding-bottom:60px;text-align:center}
   .foot-inner h2{font-size:clamp(1.8rem,3.4vw,2.6rem);max-width:18em;margin:14px auto 26px}
   .foot-inner .cta-row{justify-content:center}
   footer{padding:34px 0;color:var(--muted-2);font-size:.82rem;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
@@ -278,9 +295,10 @@
         <a class="btn btn-primary" href="#get">Run Rutter on a repo</a>
         <a class="btn btn-ghost" href="#standard">See the standard</a>
       </div>
-      <div class="invoke" role="note" aria-label="Universal invocation">
+      <div class="invoke" role="note" aria-label="Universal invocation" title="Click to copy invocation">
         <span class="prompt">›</span>
         <span class="cmd">Read rutter/SKILL.md and follow it against this repository.</span>
+        <span class="copy-hint">Copy</span>
       </div>
     </div>
 
@@ -415,13 +433,12 @@ GEMINI.md        <i>← pointer</i>
     <div class="man-col reveal">
       <h3>The work</h3>
       <span class="role">.agent/features/ &amp; skills/ · what to do</span>
-      <div class="tree">features/<b>INDEX.md</b>
-features/&lt;name&gt;/
+      <div class="tree">features/&lt;name&gt;/
   <b>FEATURE.md</b>   <i>← what &amp; why</i>
   <b>TASKS.md</b>     <i>← stable IDs: “continue Task 1.2”</i>
   references/
 skills/<b>INDEX.md</b> <i>+ procedures</i></div>
-      <div class="man-note">Stable task IDs work in any tool. <em>Any agent, told “continue Task 1.2,” knows exactly what you mean.</em></div>
+      <div class="man-note">Effortless maintenance in any tool. <em>Command any agent: “Read AGENTS, {feature} and fix {issue}” — it resolves the feature, checks the gotchas, and gets straight to work.</em></div>
     </div>
   </div>
 </section>
@@ -481,11 +498,22 @@ skills/<b>INDEX.md</b> <i>+ procedures</i></div>
     <p>No tool-specific vocabulary inside — just “read this file, create that file, run this command.” Claude Code auto-triggers it as a skill; everything else needs exactly one sentence:</p>
   </div>
   <div class="crew-row reveal">
-    <span class="crew">Claude Code</span><span class="crew">Cursor</span><span class="crew">Copilot</span><span class="crew">Gemini CLI</span><span class="crew">Codex</span><span class="crew">Windsurf</span><span class="crew">Aider</span>
+    <span class="crew">Claude Code</span><span class="crew">Cursor</span><span class="crew">Copilot</span><span class="crew">Gemini CLI</span><span class="crew">Codex</span><span class="crew">Windsurf</span><span class="crew">Roo Code / Cline</span><span class="crew">Aider</span>
   </div>
   <div class="universal reveal">
-    <div class="line"><span class="q">›</span> “Read rutter/SKILL.md and follow it exactly against this repository.”</div>
+    <div class="line"><span class="q">›</span> “Read rutter/SKILL.md and follow it against this repository.”</div>
     <p>That’s the whole integration. Every agentic assistant can read a file and follow instructions — so the intelligence lives in plain markdown, self-contained, offline, with no network fetches and no dependencies.</p>
+  </div>
+  <div class="universal reveal" style="margin-top:14px">
+    <span class="eyebrow" style="margin-bottom:8px;display:block">Day-to-day maintenance</span>
+    <div class="line"><span class="q">›</span> “Read AGENTS, <span style="color:var(--seafoam)">{feature}</span> and fix <span style="color:var(--seafoam)">{issue}</span>”</div>
+    <div class="line" style="margin-top:6px"><span class="q">›</span> “Read AGENTS, <span style="color:var(--seafoam)">{feature}</span> and work on <span style="color:var(--seafoam)">{task}</span>”</div>
+    <p>Maintaining the project becomes second nature. No pasting 50 lines of context or re-explaining conventions. Any agent immediately resolves the feature, loads its Known Gotchas, and works safely within bounds.</p>
+  </div>
+  <div class="universal reveal" style="margin-top:14px">
+    <span class="eyebrow" style="margin-bottom:8px;display:block">Keeping it honest, later</span>
+    <div class="line"><span class="q">›</span> “Read rutter-doctor/SKILL.md and follow it against this repository.”</div>
+    <p>Docs drift — a feature gets deleted, a marker gets hand-edited, a TODO never gets answered. Rutter Doctor audits markers, links, gaps, and feature completeness against what's actually on disk, then reports back. Read-only — it never touches a file.</p>
   </div>
 </section>
 
@@ -572,6 +600,68 @@ skills/<b>INDEX.md</b> <i>+ procedures</i></div>
     }, { threshold: 0.15 });
     els.forEach(el => io.observe(el));
   }
+
+  // Copy to clipboard for snippets and invoke
+  function copyText(text, onDone, onFail) {
+    navigator.clipboard.writeText(text).then(onDone).catch(() => { if (onFail) onFail(); });
+  }
+
+  document.querySelectorAll('.snippet').forEach(snippet => {
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.setAttribute('aria-label', 'Copy code snippet');
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const text = Array.from(snippet.childNodes)
+        .filter(n => n !== btn)
+        .map(n => n.textContent)
+        .join('')
+        .trim();
+      copyText(text, () => {
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = 'Copy';
+          btn.classList.remove('copied');
+        }, 2000);
+      }, () => {
+        btn.textContent = 'Copy failed';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+      });
+    });
+    snippet.appendChild(btn);
+  });
+
+  document.querySelectorAll('.invoke').forEach(inv => {
+    inv.setAttribute('tabindex', '0');
+    inv.setAttribute('role', 'button');
+    const trigger = () => {
+      const cmd = inv.querySelector('.cmd')?.textContent || inv.textContent;
+      const hint = inv.querySelector('.copy-hint');
+      copyText(cmd.trim(), () => {
+        if (hint) {
+          const old = hint.textContent;
+          hint.textContent = 'Copied!';
+          hint.style.color = 'var(--seafoam)';
+          setTimeout(() => { hint.textContent = old; hint.style.color = ''; }, 2000);
+        }
+      }, () => {
+        if (hint) {
+          const old = hint.textContent;
+          hint.textContent = 'Copy failed';
+          setTimeout(() => { hint.textContent = old; }, 2000);
+        }
+      });
+    };
+    inv.addEventListener('click', trigger);
+    inv.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        trigger();
+      }
+    });
+  });
 </script>
 
 </body>

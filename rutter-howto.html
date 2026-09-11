@@ -22,7 +22,7 @@
     --brass-bright:#eebd6b;
     --brass-soft:rgba(216,162,74,.13);
     --seafoam:#5fb8a0;
-    --maxw:880px;
+    --maxw:1120px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth}
@@ -51,7 +51,7 @@
   .back{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:8px 14px;transition:border-color .2s}
   .back:hover{border-color:var(--brass);color:var(--text)}
 
-  header.hero{padding:48px 0 8px}
+  header.hero{padding-top:48px;padding-bottom:8px}
   .hero h1{font-size:clamp(2rem,4.4vw,3rem);margin:16px 0 14px}
   .hero p{color:var(--muted);font-size:1.05rem;max-width:38em}
   .hero p b{color:var(--text);font-weight:600}
@@ -67,14 +67,23 @@
   .lead b{color:var(--text);font-weight:600}
 
   /* two-path cards */
-  .paths{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:26px}
-  .path{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px}
+  .paths{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:26px}
+  .path{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px;min-width:0}
   .path h3{font-size:1rem;margin-bottom:4px}
   .path .who{font-family:'JetBrains Mono',monospace;font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);display:block;margin-bottom:12px}
   .path p{font-size:.87rem;color:var(--muted);margin-bottom:12px}
-  .snippet{font-family:'JetBrains Mono',monospace;font-size:.74rem;color:var(--text);background:var(--ink-2);border:1px solid var(--line);border-radius:6px;padding:11px 13px;overflow-x:auto;white-space:pre;line-height:1.8}
+  .snippet{font-family:'JetBrains Mono',monospace;font-size:.74rem;color:var(--text);background:var(--ink-2);border:1px solid var(--line);border-radius:6px;padding:11px 54px 11px 13px;position:relative;overflow-x:auto;white-space:pre;line-height:1.8}
   .snippet .c{color:var(--muted-2)}
   .snippet .q{color:var(--brass-bright)}
+  .copy-btn{
+    position:absolute;top:8px;right:8px;
+    background:rgba(21,32,45,.85);border:1px solid var(--line);border-radius:5px;
+    padding:3px 8px;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);
+    cursor:pointer;transition:color .15s,border-color .15s,background .15s;
+    user-select:none;
+  }
+  .copy-btn:hover{color:var(--text);border-color:var(--brass);background:var(--surface-2)}
+  .copy-btn.copied{color:var(--seafoam);border-color:var(--seafoam)}
 
   /* transcript */
   .log{margin-top:28px;border:1px solid var(--line);border-radius:12px;background:var(--ink-2);overflow:hidden}
@@ -99,7 +108,7 @@
   .aside b{color:var(--text);font-weight:600}
 
   /* after-the-run cards */
-  .cards{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:26px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;margin-top:26px}
   .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px}
   .card h3{font-size:.98rem;margin-bottom:8px}
   .card p{font-size:.87rem;color:var(--muted)}
@@ -114,7 +123,7 @@
   .qa p .mono{font-size:.8rem;color:var(--text)}
 
   .foot-cta{margin-top:96px;border-top:1px solid var(--line-soft);background:linear-gradient(180deg,transparent,rgba(216,162,74,.05))}
-  .foot-inner{padding:70px 0 50px;text-align:center}
+  .foot-inner{padding-top:70px;padding-bottom:50px;text-align:center}
   .foot-inner h2{font-size:clamp(1.6rem,3vw,2.2rem);max-width:20em;margin:14px auto 26px}
   .btn{
     display:inline-flex;align-items:center;gap:10px;border-radius:8px;
@@ -135,7 +144,7 @@
   }
   a:focus-visible{outline:2px solid var(--brass);outline-offset:3px;border-radius:6px}
   @media (max-width:700px){
-    .paths,.cards{grid-template-columns:1fr}
+    .paths{grid-template-columns:1fr}
     .btn-ghost{margin-left:0;margin-top:10px}
   }
 </style>
@@ -207,7 +216,7 @@
       <span class="who">RUTTER</span>
       <p><b>Detection:</b> this looks like an existing project — a Next.js 14 frontend and a FastAPI backend in one repo, pnpm + pip, pytest present, GitHub Actions CI. I'll run in <b>existing mode</b>: document what's here.</p>
       <p style="margin-top:8px"><b>Task 1</b> is discovery: I'll scan the structure and report my findings before writing anything.</p>
-      <span class="choices">PROCEED · ADJUST · SKIP</span>
+      <span class="choices">PROCEED · ADJUST</span>
     </div>
 
     <div class="turn dev">
@@ -223,20 +232,21 @@ layout    <b>web/</b> frontend · <b>api/</b> backend · shared nothing
 tests     pytest in api/tests — web/ has none
 commands  <b>pnpm dev · uvicorn main:app · pytest</b>
 unknown   deployment target — I'll mark it TODO(you)</pre>
-      <p style="margin-top:10px"><b>Task 2:</b> generate AGENTS.md + the four adapters from these facts.</p>
-      <span class="choices">PROCEED · ADJUST · SKIP</span>
+      <p style="margin-top:10px"><b>Task 2:</b> generate AGENTS.md + adapters (CLAUDE.md always; which of Gemini/Cursor/Copilot/Windsurf/Roo/Aider to include?).</p>
+      <span class="choices">PROCEED · ADJUST</span>
     </div>
 
     <div class="turn dev">
       <span class="who">YOU</span>
-      <p>Adjust — deployment is Railway, both services. And add a rule: never touch <b>api/migrations/</b> by hand.</p>
+      <p>Adjust — include all adapters. Deployment is Railway, both services. And add a rule: never touch <b>api/migrations/</b> by hand.</p>
     </div>
 
     <div class="turn rutter">
       <span class="who">RUTTER</span>
-      <p>Noted both — deployment recorded, and the migrations rule goes in AGENTS.md under hard rules. <b>Done — created:</b></p>
+      <p>Noted all three — adapters confirmed, deployment recorded, and the migrations rule goes in AGENTS.md under hard rules. <b>Done — created:</b></p>
       <pre><b>AGENTS.md</b>          CLAUDE.md · GEMINI.md
-.cursor/rules/     .github/copilot-instructions.md</pre>
+.cursor/rules/     .github/copilot-instructions.md
+.windsurfrules     .clinerules · .aider.conventions.md</pre>
       <p style="margin-top:10px"><b>Task 3:</b> .agent/docs/ARCHITECTURE.md — it will describe the two-service layout, request flow web→api→Postgres, and the directory map.</p>
       <span class="choices">PROCEED · ADJUST · SKIP</span>
     </div>
@@ -272,10 +282,11 @@ unknown   deployment target — I'll mark it TODO(you)</pre>
   <h2>After the run — how the docs get used.</h2>
   <div class="cards reveal">
     <div class="card">
-      <h3>Start every agent session the same way</h3>
-      <p>In any tool, any model, the session-opening line is now identical across all your projects:</p>
-      <div class="snippet"><span class="q">"Read AGENTS.md. Then continue Task 2.1
- of the checkout feature."</span></div>
+      <h3>Effortless maintenance with any agent</h3>
+      <p>Maintaining the project becomes second nature. Whether fixing an issue or building out scope, open any agent and command it in shorthand:</p>
+      <div class="snippet"><span class="q">"Read AGENTS, auth and fix token refresh bug"</span>
+<span class="c"># or to continue tracked feature work:</span>
+<span class="q">"Read AGENTS, checkout and work on Apple Pay"</span></div>
     </div>
     <div class="card">
       <h3>It stays current on its own</h3>
@@ -283,7 +294,13 @@ unknown   deployment target — I'll mark it TODO(you)</pre>
       <div class="snippet"><span class="c"># markers separate managed content from your hand-added notes</span>
 &lt;!-- rutter:begin --&gt; … &lt;!-- rutter:end --&gt;</div>
     </div>
+    <div class="card">
+      <h3>Catching drift before it bites</h3>
+      <p>Months later, run a health check — it audits markers, dead links, ungrounded gaps, and feature completeness against what's actually on disk. Read-only, reports only:</p>
+      <div class="snippet"><span class="q">"Read rutter-doctor/SKILL.md and follow it against this repository."</span></div>
+    </div>
   </div>
+  <div class="aside" style="margin-top:20px"><b>Why maintenance is easier:</b> You never have to re-explain the stack or paste 50 lines of context. The agent follows Rutter's resolution algorithm to map <span class="mono">{feature}</span> to <span class="mono">.agent/features/{slug}/FEATURE.md</span>, checks its Known Gotchas, respects package boundaries, and updates documentation as it finishes.</div>
 </section>
 
 <section class="wrap">
@@ -292,7 +309,7 @@ unknown   deployment target — I'll mark it TODO(you)</pre>
   <div class="faq reveal">
     <div class="qa">
       <h3>Which assistants does it work with?</h3>
-      <p>Any agent that can read files and follow instructions — Claude Code (native skill), Cursor, Copilot, Gemini CLI, Codex, Windsurf, Aider. There's no tool-specific vocabulary inside, and no network access needed: the whole skill is self-contained markdown.</p>
+      <p>Any agent that can read files and follow instructions — Claude Code (native skill), Cursor, Copilot, Gemini CLI, Codex, Windsurf, Roo Code / Cline, Aider. There's no tool-specific vocabulary inside, and no network access needed: the whole skill is self-contained markdown.</p>
     </div>
     <div class="qa">
       <h3>Does it need to run scripts or install anything?</h3>
@@ -341,6 +358,34 @@ unknown   deployment target — I'll mark it TODO(you)</pre>
     }, { threshold: 0.12 });
     els.forEach(el => io.observe(el));
   }
+
+  // Copy to clipboard for snippets
+  document.querySelectorAll('.snippet').forEach(snippet => {
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.setAttribute('aria-label', 'Copy code snippet');
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const text = Array.from(snippet.childNodes)
+        .filter(n => n !== btn)
+        .map(n => n.textContent)
+        .join('')
+        .trim();
+      navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = 'Copy';
+          btn.classList.remove('copied');
+        }, 2000);
+      }).catch(() => {
+        btn.textContent = 'Copy failed';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+      });
+    });
+    snippet.appendChild(btn);
+  });
 </script>
 
 </body>

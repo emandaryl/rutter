@@ -52,3 +52,26 @@ without that check-in first.
 
 Run it again later — after a stack change, a new dependency, a new convention — and it updates only
 the content it originally wrote, leaving anything you've hand-edited alone.
+
+## Effortless maintenance afterward
+
+Once generated, your codebase becomes dramatically easier to maintain with AI agents. You don't have to re-explain the architecture or paste dozens of lines of context. Just command any agent:
+
+```
+"Read AGENTS, {feature} and fix {issue}"
+"Read AGENTS, {feature} and work on {task}"
+```
+
+For example:
+- `"Read AGENTS, auth and fix the session expiration issue"`
+- `"Read AGENTS, checkout and work on refund support"`
+
+The agent follows `AGENTS.md` to resolve the feature, inspects its `FEATURE.md` and Known Gotchas, respects boundaries, and updates documentation as it finishes.
+
+## Auditing and health checks
+
+To check an already-scaffolded repo for drift, dead links, broken markers, ungrounded gaps, or context bloat, see `rutter-doctor/START-HERE.md` or invoke:
+
+```
+Read rutter-doctor/SKILL.md and follow it against this repository.
+```
