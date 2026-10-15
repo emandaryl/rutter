@@ -31,6 +31,19 @@ leaves anything hand-edited outside those markers untouched.
 Full behavior spec: [`rutter/SKILL.md`](rutter/SKILL.md). Maintaining this repo? See
 [`CONTRIBUTING.md`](CONTRIBUTING.md) for the rules and decisions behind it.
 
+## Get Rutter
+
+Clone the repo, or use GitHub's **Code → Download ZIP** button, from
+[github.com/emandaryl/rutter](https://github.com/emandaryl/rutter):
+
+```
+git clone https://github.com/emandaryl/rutter.git
+```
+
+Either way you end up with this folder locally. `rutter/` and `rutter-doctor/` are
+self-contained — copy either one wherever you need it next (see below). Nothing else in this
+repo (`README.md`, `CONTRIBUTING.md`, the landing pages) needs to travel with them.
+
 ## Using it
 
 - **Live in Claude Code?** Copy the `rutter/` folder into `~/.claude/skills/rutter/` (global) or

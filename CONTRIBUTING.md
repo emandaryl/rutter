@@ -14,7 +14,8 @@ formats that keep this repo consistent, for whoever (human or agent) edits it ne
 | `rutter-doctor/START-HERE.md` | Human-facing quickstart for Doctor, read by a person before invoking an agent. |
 | `rutter-landing.html`, `rutter-howto.html` | Marketing/prose *description* of what the skill does. Not executable, not read by an agent running Rutter — for humans deciding whether to install it. |
 | `README.md` | Project pitch for this repo. |
-| `rutter.zip` | Personal, local-only convenience artifact. Gitignored, never committed, not documented in README. Rebuild with the command at the bottom of this file. |
+| `rutter.zip` | Personal, local-only convenience artifact for *your own* quick unzip-and-test loop. Gitignored, never committed, not documented in README. Rebuild with the command at the bottom of this file. |
+| `rutter-backups/` | Personal version history from iterating on `SKILL.md`/`doctor-SKILL.md` locally. Gitignored, never committed, not part of what the repo distributes. |
 
 ## Format specs — where they live
 
@@ -26,9 +27,9 @@ it at its source. Never copy one out "for convenience," even into this file.
 | Format | Lives in |
 |---|---|
 | `AGENTS.md` itself — which sections are `[STANDARD]` (copied verbatim) vs `[FILL: ...]` (authored per-repo) | `rutter/templates/AGENTS.template.md` — the file *is* the spec |
-| `TASKS.md` format — Phase/Task numbering (`Task {N.M}`), the `[ ]`/`[~]`/`[x]`/`[!]` status legend, the agent-prompt block | `AGENTS.template.md`, "TASKS.md Format" section |
-| `FEATURE.md` format — frontmatter, required sections, "Known Gotchas" | `AGENTS.template.md`, "FEATURE.md Format" section |
-| A nested `.agent/skills/<name>/SKILL.md` format (a *generated-repo's* skill file — not this project's own `SKILL.md`) | `AGENTS.template.md`, "SKILL.md format" section |
+| `TASKS.md` format — Phase/Task numbering (`Task {N.M}`), the `[ ]`/`[~]`/`[x]`/`[!]` status legend, the agent-prompt block | `rutter/templates/docs/TASK-CREATION.template.md` — the file *is* the spec; `AGENTS.md` only points at it |
+| `FEATURE.md` format — frontmatter, required sections, "Known Gotchas" | `rutter/templates/docs/FEATURE-CREATION.template.md` |
+| A nested `.agent/skills/<name>/SKILL.md` format (a *generated-repo's* skill file — not this project's own `SKILL.md`) | `rutter/templates/docs/SKILL-CREATION.template.md` (also holds the no-script fallback rule) |
 | Each `.agent/docs/<NAME>.md` file's own section structure | Its own `rutter/templates/docs/<NAME>.template.md` |
 | Adapter file body (`CLAUDE.md`, `GEMINI.md`, `.cursor/rules/project.mdc`, `.github/copilot-instructions.md`, `.windsurfrules`, `.clinerules`, `.aider.conventions.md`) | `rutter/templates/ADAPTER.template.md` |
 | `.agent/skills/INDEX.md` scaffold | `rutter/templates/SKILLS_INDEX.template.md` |
@@ -36,6 +37,21 @@ it at its source. Never copy one out "for convenience," even into this file.
 
 The Conventions section below covers *rules about* these formats (e.g. why task IDs look the way
 they do); this table is for finding the formats themselves.
+
+## Public distribution
+
+Rutter is meant to be shared, not kept local-only. The **public distribution is the GitHub repo
+itself** (`github.com/emandaryl/rutter`) — a user clones it or uses GitHub's "Download ZIP" button,
+then copies `rutter/` and/or `rutter-doctor/` out of the clone to wherever they need it (their
+skills directory, or straight into a repo to document). No separate packaging pipeline, release
+process, or build step is needed for this, because both folders are already self-contained and
+already sit at the repo root — don't let that change.
+
+This means the repo root must stay safe to hand to a stranger as-is: `rutter-backups/`,
+`rutter.zip`, and `scratch/` are gitignored for exactly this reason (see above) — they're maintainer
+clutter, not something an end user should have to wade through or see referenced. If you add any
+new personal/local-only artifact to this repo in the future, gitignore it the same way rather than
+documenting around it.
 
 ## Source of truth: `SKILL.md` wins
 
@@ -75,6 +91,7 @@ needs to change.
   (the docs/features/skills tasks) are resolved — so the Final task (`SKILL.md` step 7) reconciles
   all three against what was actually created, using the same marker-scoped update mechanism as a
   re-run, before reporting. Preserve this two-pass reconcile if you restructure the task loop.
+- **`AGENTS.md` carries pointers, not format specs.** The `FEATURE.md`/`TASKS.md`/`SKILL.md` formats live in the always-created, verbatim `.agent/docs/*-CREATION.md` guides (written in Task 2 and marker-wrapped, so improvements reach existing repos on re-run). `AGENTS.md` keeps one imperative line per guide — read it before creating, never write from memory — plus the **Managed content** note, which stays inline because it is a work-time rule (an agent finishing a task needs it), not a creation-time one. Keep the heading "Creating a Feature / Reference / Task / Skill" stable: the `OVERVIEW` template points at it. If a repo already has a skill or doc that owns a format, Rutter skips that guide and points `AGENTS.md` at the owner (SKILL.md steps 3a and 6), so keep every `.agent/docs/<GUIDE>.md` path in the template easy to substitute. Existing-file checks match names case-insensitively. Before moving more text out of `AGENTS.md`, check that it holds no rule an agent needs mid-task.
 - **The skill's directory name and its `name:` frontmatter field must always match** (`rutter`,
   both places).
 - **Templates must be self-contained.** If you see language like "the way this repo's own X
@@ -106,7 +123,7 @@ Touch all of these together, not just the template:
 
 1. `rutter/templates/docs/<NAME>.template.md` — add or delete the stub.
 2. `rutter/SKILL.md` step 4's evidence table — the "create when" row.
-3. `rutter/SKILL.md`'s References section doc count (currently "10 total; first two always used").
+3. `rutter/SKILL.md`'s References section doc count (currently "13 total; `OVERVIEW`, `ARCHITECTURE` and the three `*-CREATION` guides always used").
 4. `rutter-landing.html`'s `#standard` section, "The depth" manifest tree — illustrative, keep it
    loosely in sync (it shows 5 example doc names, not all of them).
 5. The relevant platform pack(s)' "Conditional docs signals" bullet, if the new doc has

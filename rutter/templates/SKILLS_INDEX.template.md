@@ -5,8 +5,7 @@ tool-agnostic skill content worth seeding, add one real row per skill found; oth
 table with just the header, ready for the first skill. A row doesn't have to point at
 .agent/skills/<name>/ — an existing .claude/skills/<name>/ (Claude Code's own skill format) gets a
 row pointing at .claude/skills/<name>/SKILL.md instead, per step 6 of SKILL.md: cross-referenced,
-not duplicated. See AGENTS.md's "Skills" section and "Creating a Feature / Reference / Task /
-Skill" for the format each row corresponds to. Delete this comment when done. -->
+not duplicated. See AGENTS.md's "Skills" section and `.agent/docs/SKILL-CREATION.md` for the format each row corresponds to. Delete this comment when done. -->
 
 # Skills Index
 

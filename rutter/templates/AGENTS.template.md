@@ -6,15 +6,7 @@
 > For feature-specific work, also load the relevant feature doc from `.agent/features/` — see the bottom of this file.
 > For a known recurring procedure, check `.agent/skills/INDEX.md` first — see "Skills" below.
 >
-> **Context Budget:** Keep the project-specific sections above (What This Project Is through Domain
-> Concepts) concise — roughly ~150–200 lines combined. It is a harbor chart and router, not an
-> encyclopedia: long-form guides, full API specs, and deep domain walkthroughs belong in
-> `.agent/docs/` or feature references, linked from here by explicit path, never inlined. This
-> budget covers only the project-specific content — the STANDARD process sections below (Task
-> Files, Feature Docs, Skills, Creating-a-Feature) are fixed, copied-verbatim overhead of roughly
-> 300 lines and don't count against it. A finished `AGENTS.md` therefore typically lands around
-> 450–550 lines total; what matters is that the project-specific portion stays tight, not the
-> whole-file line count.
+> **Context Budget:** keep the project-specific sections concise (~150–200 lines combined); long-form material belongs in `.agent/docs/` or feature references, linked by explicit path.
 
 ---
 <!--
@@ -168,79 +160,9 @@ everywhere, not an exhaustive glossary.]
 
 ### TASKS.md Format
 
-When creating a `.agent/features/<name>/TASKS.md`, follow this format strictly — structure,
-headings, and status marks exactly as below. Only the title, the project-specific rules in the
-instructions block, and the phase/task/prompt content are filled in per feature. The instructions
-block must always include, at minimum, rules forbidding hardcoded strings/integers and any
-project-specific logging bypass (see "Logging" above), plus the two standing rules that keep
-`AGENTS.md`/`.agent/docs/` current as tasks complete — updating stale content and recording real
-decisions in `DECISIONS.md` (see the instructions block below) — copy both verbatim, neither is
-project-specific. Add any additional constraints specific to that feature on top. The first phase (`Phase 0`) is conventionally reserved for manual/human setup work
-(creating packages, baseline scaffolding) that an agent should not attempt itself. A manual-only
-task still gets the full `Task {N.M}` block and checklist, but its **Agent prompt** line is a fixed
-marker instead of an actual prompt — `**Agent prompt:** Manual step — not for an agent.` — rather
-than improvising a "don't do this" instruction each time one comes up.
+**Before creating or restructuring any `TASKS.md`, read `.agent/docs/TASK-CREATION.md` and follow its format exactly — do not write one from memory.**
 
-This is also why `AGENTS.md` and every file in `.agent/docs/` are wrapped in Rutter's begin/end
-markers in the first place: so it's always unambiguous which content is safe for a task-completing
-agent (not just Rutter itself) to update directly — anything between the markers — versus a
-human's own hand-added notes outside them, which must never be touched.
-
-```markdown
-# TASKS.md — {Title}
-
-> **Instructions for agents:**
-> - Read `AGENTS.md` and `.agent/features/{name}/FEATURE.md` before starting any task.
-> - Work on ONE task at a time. Do not start the next task until the current one is marked `[x]`.
-> - Before marking a task `[x]`, check whether its work makes anything in the root `AGENTS.md` or
->   `.agent/docs/` stale, or resolves a `TODO(you)` there — a new shared class for Key Shared
->   Utilities, a Package Structure line that's changed, an architecture detail that's now built
->   instead of planned. If so, update the specific section that changed, right now, as part of
->   finishing this task — don't defer it to a separate pass. Also update this feature's own
->   `FEATURE.md` Package Structure section the same way; it's a living section, same as Known
->   Gotchas.
-> - If this task involved a real, non-obvious technical choice the plan didn't already specify (a
->   library picked, a pattern adopted, a tradeoff accepted), record it in
->   `.agent/docs/DECISIONS.md` as a short title, a **Decision:** line, a **Why:** line, and a
->   **Status: active** line. Create the file with a `# Decisions` heading if it doesn't exist yet
->   — don't skip the entry just because nothing warranted the file when the docs were first
->   generated. Same bar either way: genuinely non-obvious, not routine.
-> - When a task is complete, mark it `[x]` and add a brief completion note — mention here if a
->   root doc got updated too, so there's a record of what changed and why.
-> - Never skip a task. Each task builds on the ones before it.
-> - If a task is blocked, mark it `[!]` and add a `> BLOCKED:` note explaining why.
-> - Request human review before marking any task complete.
-> - **{project-specific rule}.**
-> - **{project-specific rule}.**
-
----
-
-## Status Legend
-
-| Mark | Meaning |
-|---|---|
-| `[ ]` | Not started |
-| `[~]` | In progress |
-| `[x]` | Complete — reviewed and approved |
-| `[!]` | Blocked — see note below task |
-
----
-
-## Phase {N} — {Phase Name}
-
-> **Goal:** {what this phase achieves}
-
-### Task {N.M} — {Task Name}
-- [ ] {checklist item}
-- [ ] {checklist item}
-
-> Completed: {brief note on what was done, added once the task is marked `[x]`}
-
-**Agent prompt:**
-> "{self-contained prompt: what to read, what to build/change, any constraints, 'Stop and request review.'}"
-
----
-```
+**Managed content.** Anything between `<!-- rutter:begin -->` and `<!-- rutter:end -->` in `AGENTS.md`, the adapters and `.agent/docs/` files is managed: a task-completing agent may update it directly (the doc-currency rule in every `TASKS.md`). Anything outside the markers is a human's own notes — never touch it.
 
 Each feature has its own task file at `.agent/features/<feature-name>/TASKS.md`. New rows are added
 to the table below as features are created — see "Creating a Feature / Reference / Task" at the
@@ -254,7 +176,7 @@ leave the table with just the header, ready for the first feature. Do not invent
 **To work on a feature:** load `AGENTS.md` + the feature's `FEATURE.md` + its `TASKS.md`.
 **To run features in parallel:** give each session its own git branch or worktree — never run two
 feature sessions directly against the same uncommitted working tree. Task files are scoped so
-sessions shouldn't need to touch the same *code*, but the doc-currency rule above (keeping
+sessions shouldn't need to touch the same *code*, but the doc-currency rule in each `TASKS.md` (keeping
 `AGENTS.md`/`.agent/docs/` updated as tasks complete) means two sessions genuinely can end up
 editing the same shared file. With separate branches, that's safe: it surfaces as a normal git
 merge, auto-resolved if the edits don't overlap, a visible conflict for a human to resolve if they
@@ -271,12 +193,16 @@ protects code — a parallel run needs both.
 ## App-Wide Docs [STANDARD — table rows are conditional on what was actually created]
 
 Engineering reference docs for the whole project. Read these when you need deeper context beyond
-what AGENTS.md provides.
+what AGENTS.md provides. The three `*-CREATION.md` guides are process docs, not project docs — read
+the matching one before creating a feature, `TASKS.md` or skill.
 
 ```
 .agent/docs/
-├── OVERVIEW.md      ← what the project is, scope, feature map
-├── ARCHITECTURE.md  ← deeper technical flow than the summary above
+├── OVERVIEW.md          ← what the project is, scope, feature map
+├── ARCHITECTURE.md      ← deeper technical flow than the summary above
+├── FEATURE-CREATION.md  ← how to add a feature or a references/ file
+├── TASK-CREATION.md     ← how to write a TASKS.md
+├── SKILL-CREATION.md    ← how to add a skill
 <!-- [FILL: add one line per conditional doc that was actually created — SETUP.md, TESTING.md,
 SECURITY.md, DECISIONS.md, UI.md, API.md, FLOWS.md, DEPLOYMENT.md — each with a short "← purpose"
 note. Omit any that weren't created; never list a doc that doesn't exist on disk. -->
@@ -295,8 +221,6 @@ authoritative agent-facing reference — more accurate and up to date than `.age
 > than trusting the literal path as typed.
 
 ### Resolving a shorthand feature instruction
-
-Once charted, maintaining the project with any agent is as simple as a one-line command: `"Read AGENTS, {feature} and fix {issue}"` or `"Read AGENTS, {feature} and work on {task}"`.
 
 A request will often arrive as shorthand, not a full path — all of these must resolve the same way:
 
@@ -347,145 +271,30 @@ each with its FEATURE.md / TASKS.md / references/ children (e.g.
 
 ### FEATURE.md Format
 
-When creating a new `.agent/features/<name>/FEATURE.md`, follow this shape. The frontmatter and
-first three body sections are required; add whichever deeper sections the feature needs (State
-Design, Data Flows, Screens, Side Effects, etc.) between "Package Structure" and "Known Gotchas".
+**Before creating a new `FEATURE.md` or a `references/<TOPIC>.md` file, read `.agent/docs/FEATURE-CREATION.md` and follow its format exactly — do not write one from memory.**
 
-```markdown
----
-name: {feature-slug}
-description: >
-  {One paragraph, plain prose: what this feature is and what it covers. No "Trigger on: ..."
-  keyword list — just describe the scope clearly enough that a reader can tell if this is the
-  right doc for their task.}
----
-
-# {Feature Title}
-
-## What This Feature Covers
-
-{What the feature is, what it replaces if this is a migration, and what it explicitly does NOT
-cover — link to sibling feature docs for adjacent scope instead of duplicating it.}
-
-## Architecture in One Paragraph
-
-{The shape of the feature in a few sentences: the main classes/screens and how data flows between
-them. Enough for a reader to orient before going deeper.}
-
-## Package Structure
-
-{File tree or table of the feature's classes/files and each one's responsibility. Living section,
-same as Known Gotchas below — update it as part of finishing any task that adds, moves, or removes
-a file, not just once at the start.}
-
-{...deeper sections as needed...}
-
-## Known Gotchas
-
-{Non-obvious constraints, past bugs and their root cause, workarounds, "don't do X because Y"
-rules specific to this feature. Living section — update it any time work in this feature surfaces
-something non-obvious, whether that's a TASKS.md phase being completed and retired, or a one-off
-bug fix / ad hoc change done straight against this FEATURE.md with no task file involved. Gotchas
-belong here permanently, not just in a task's completion note or a commit message.}
-
-## Golden Rules
-
-{Short numbered list of hard constraints for this feature — the "never do X" / "always do Y"
-rules a future agent must not violate.}
-```
-
-**Prompting patterns** (all equivalent — see "Resolving a shorthand feature instruction" above):
-- `"Read AGENTS, {feature_name} and fix [issue]."`
-- `"Read AGENTS, {feature_name} and work on [task]."`
-- `"Read AGENTS.md and .agent/features/{slug}/FEATURE.md, then implement [task]."`
-- `"Read AGENTS and feature/{feature_name} and [bug/implementation description]."`
-- `"Read AGENTS and {feature_name} and [bug/implementation description]."`
-
-New feature docs will be added as more features are built out. If no feature doc exists for the
-area you're working on, check `.agent/docs/` for engineering reference docs.
+If no feature doc exists for the area you're working on, check `.agent/docs/` for engineering reference docs.
 
 ---
 
 ## Skills — Tool-Agnostic Reusable Procedures [STANDARD]
 
-`.agent/skills/` holds reusable, multi-step procedures any tool or agent can follow — written in
-plain, tool-agnostic language (no assumptions about slash commands, a particular subagent system,
-or any single vendor's tool surface). Where `.agent/features/` captures context about *what the
-project is*, `.agent/skills/` captures *how to correctly do a specific recurring task* — a release
-process, a codegen step, a data-migration script, an onboarding checklist.
+`.agent/skills/` holds reusable multi-step procedures any tool can follow, in tool-agnostic language. Before starting a task that looks like a known recurring procedure, check `.agent/skills/INDEX.md` — a one-line-per-skill lookup. A row may point at a skill living outside `.agent/skills/` (e.g. `.claude/skills/<name>/SKILL.md`); the index is the single lookup table either way.
 
-Check `.agent/skills/INDEX.md` before starting any task that looks like a known recurring
-procedure — it's a one-line-per-skill lookup, faster than opening every skill folder to find the
-right one. A row may point at a skill living outside `.agent/skills/` — e.g. a Claude-Code-specific
-skill at `.claude/skills/<name>/SKILL.md` — rather than duplicating it here; the index is the single
-lookup table regardless of where each skill's real content lives.
-
-```
-.agent/skills/
-├── INDEX.md                     ← one line per skill: name, when to use it
-└── <skill-name>/
-    ├── SKILL.md                 ← instructions, written in tool-agnostic language
-    ├── references/              ← optional supporting docs (protocol detail, worked examples)
-    └── scripts/                 ← optional automation — see the no-script fallback rule below
-```
-
-### SKILL.md format
-
-```markdown
----
-name: {skill-slug}
-description: {one line — what this does and when to use it; becomes the INDEX.md row}
----
-
-# {Skill Title}
-
-## When to Use This
-
-{The trigger conditions — what request or situation should make an agent load this skill.}
-
-## Steps
-
-{Numbered, tool-agnostic instructions describing the procedure itself, not one tool's specific
-syntax for it — "run this project's lint command" rather than a command tied to one particular
-CLI or vendor.}
-
-## Known Gotchas
-
-{Non-obvious failure modes or edge cases this procedure has hit before.}
-```
-
-### The no-script fallback rule
-
-If a skill's `scripts/` folder contains an automation script, `SKILL.md`'s "Steps" section must
-also spell out the manual equivalent — a numbered fallback, not just a bare "run
-`scripts/foo.sh`" line. Not every environment an agent runs in can execute a local script
-(sandboxing, a missing runtime, a different OS); the manual fallback is what keeps the skill
-usable everywhere the script isn't. Don't create `scripts/` preemptively — add it only once a
-real automatable step exists, the same evidence bar `references/` gets in Feature Docs above.
+**Before creating a skill, read `.agent/docs/SKILL-CREATION.md` and follow its format exactly.**
 
 ---
 
 ## Creating a Feature / Reference / Task / Skill [STANDARD]
 
-Four related but distinct things get added to this doc system over time — use the right one:
+<!-- Delete this comment when done. If step 3a found an existing owner of a format, replace that row's `.agent/docs/<GUIDE>.md` path (here and in the pointer lines above) with the owner's real path; see SKILL.md step 6. -->
 
-1. **New feature** → create `.agent/features/<slug>/`, write `FEATURE.md` following the
-   "FEATURE.md Format" above, then add it to the tree in "Feature Docs" above and add its row to
-   the Task Files table if it also gets a `TASKS.md`.
-2. **New reference** → when a feature's supplementary material (protocol/domain detail, deep
-   architecture for one sub-system, a debrief/postmortem) would bloat `FEATURE.md` past being
-   scannable, split it into `.agent/features/<slug>/references/<TOPIC>.md` — one self-contained
-   topic per file, written so it can be loaded on its own — and link it from the relevant
-   `FEATURE.md` section instead of inlining the material. Don't create a `references/` folder
-   preemptively; add it the first time a feature actually needs one.
-3. **New task file** → only when there's real, in-progress multi-step work to track for that
-   feature (not one automatically for every feature) — create `TASKS.md` following the "TASKS.md
-   Format" above. Once the work is done, fold any permanent gotchas into the feature's `FEATURE.md`
-   "Known Gotchas" section, then archive it to `.agent/features/<slug>/archive/TASKS-v{N}.md` (or
-   remove it if historical tracking is unneeded).
-4. **New skill** → when a recurring, multi-step *procedure* (not project context — that's a
-   feature) needs to be captured so any tool or agent can follow it correctly — create
-   `.agent/skills/<slug>/`, write `SKILL.md` following the "SKILL.md format" above, and add its
-   row to `.agent/skills/INDEX.md`. Add `references/` or `scripts/` only once real supporting
-   material or an actual automatable step exists — and if `scripts/` gets added, `SKILL.md` must
-   include the manual no-script fallback described above.
+Read the matching guide before creating anything — never write these from memory:
+
+| To add… | Read first |
+|---|---|
+| A new feature, or a `references/<TOPIC>.md` file | `.agent/docs/FEATURE-CREATION.md` |
+| A `TASKS.md` (only for real multi-step work) | `.agent/docs/TASK-CREATION.md` |
+| A skill | `.agent/docs/SKILL-CREATION.md` |
+
+After adding a feature, add it to the tree in "Feature Docs" and, if it has a `TASKS.md`, to the Task Files table. When a feature's work is done, fold permanent gotchas into its `FEATURE.md` "Known Gotchas" and archive the `TASKS.md` as described in "Feature Docs" above.
