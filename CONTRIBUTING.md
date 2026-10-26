@@ -113,9 +113,9 @@ auto-updated, and this has been a real, recurring source of drift. After renumbe
 grep -rn "step [0-9]\|SKILL\.md step" rutter/SKILL.md rutter/templates/*.md rutter/templates/**/*.md
 ```
 
-and manually verify every hit still points at the right content. `rutter/templates/ADAPTER.template.md`
-and `rutter/templates/SKILLS_INDEX.template.md` both reference specific `SKILL.md` step numbers and
-are easy to forget.
+and manually verify every hit still points at the right content. `rutter/templates/SKILLS_INDEX.template.md`
+references a specific `SKILL.md` step number (step 6) — `rutter/templates/ADAPTER.template.md`
+references none — both are easy to forget.
 
 ### Adding or removing a conditional `.agent/docs/` file
 

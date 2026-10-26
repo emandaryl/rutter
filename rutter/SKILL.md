@@ -433,9 +433,9 @@ claims** — numbers and units (timeouts, limits, sizes, counts, ports), default
 environment-variable names, route paths, file paths, version requirements — and check each against
 the code that owns it (open the source file; a grep that the name exists is not enough). Always do
 this for every file the state-file diff lists as changed, and for the claims in the feature that owns
-it; for unchanged files a sample is acceptable if stated. Report each mismatch in the task as the
-old line, the new line and the evidence (file and line), and apply it only on approval. A task may
-only report "no changes" if the sweep was done, and must say how many claims were checked.
+it. Report each mismatch in the task as the old line, the new line, and the evidence (file and line),
+and apply it only on approval. A task may only report "no changes" if the sweep was done — state how
+many claims were checked. For unchanged files a sample is acceptable if stated.
 
 ### 6. Content and write rules (apply during Execute)
 
@@ -464,16 +464,20 @@ never invent content to fill a gap.
 repo — only create what's genuinely missing or update what's genuinely marker-managed, and only
 for tasks the user approved.
 
-- `AGENTS.md` at the target repo root — Task 2. Fresh run: create it wrapped in
-  `<!-- rutter:begin -->` / `<!-- rutter:end -->` as its first and last lines (step 0 guaranteed
-  none existed, or none without markers). Re-run: replace only the content between the existing
-  markers with the freshly drafted version; leave anything outside them exactly as written.
+**The marker rule** — applies to every managed file below (`AGENTS.md`, each adapter, each
+creation guide, each `.agent/docs/` file):
+- **Fresh run:** create it wrapped in `<!-- rutter:begin -->` / `<!-- rutter:end -->` as its
+  first and last lines (step 0 guaranteed none existed, or none without markers).
+- **Re-run:** replace only the content between the existing markers with the freshly drafted
+  version; leave anything outside them exactly as written.
+- **Markerless existing file:** step 0 found it markerless — leave it untouched and skip it.
+
+- `AGENTS.md` at the target repo root — Task 2. Follow the marker rule.
 - Each adapter selected in step 2, from `templates/ADAPTER.template.md` with `[FILL: ToolName]`
   substituted (`Claude Code`, `Gemini CLI`, `Cursor`, `GitHub Copilot`, `Windsurf`, `Roo Code`,
-  `Aider`) — Task 2. Same marker rule as `AGENTS.md`: wrap on create, replace only between markers on
-  a re-run, skip untouched if step 0 found it markerless. `.cursor/rules/project.mdc` needs Cursor's
-  MDC frontmatter prepended before the (markered) template body, or Cursor won't load it as an
-  active rule:
+  `Aider`) — Task 2. Follow the marker rule. `.cursor/rules/project.mdc` needs Cursor's MDC
+  frontmatter prepended before the (markered) template body, or Cursor won't load it as an active
+  rule:
   ```
   ---
   description: Project context pointer
@@ -483,10 +487,9 @@ for tasks the user approved.
 - The three creation guides — `.agent/docs/FEATURE-CREATION.md`, `TASK-CREATION.md` and
   `SKILL-CREATION.md` — Task 2, from `templates/docs/FEATURE-CREATION.template.md`,
   `TASK-CREATION.template.md` and `SKILL-CREATION.template.md`. They are standard text: copy them
-  verbatim with only the leading template comment removed; there is nothing to fill in. Same marker
-  rule as every `.agent/docs/` file: wrap on create, replace only between markers on a re-run (so
-  improvements to the standard reach existing repos), skip untouched if markerless. They are not
-  selectable in step 4 and have no Skip of their own; drop one only if the user asks at Task 2.
+  verbatim with only the leading template comment removed; there is nothing to fill in. Follow the
+  marker rule (so improvements to the standard reach existing repos). They are not selectable in
+  step 4 and have no Skip of their own; drop one only if the user asks at Task 2.
   **Exception: an existing format owner (step 3a).** For each format that already has an owner, do
   not write that guide. In `AGENTS.md`, replace every `.agent/docs/<GUIDE>.md` reference for it (the
   pointer line, the "Creating a Feature / Reference / Task / Skill" table row and the App-Wide Docs
@@ -495,8 +498,7 @@ for tasks the user approved.
   from the Rutter templates (other task-ID style, extra header lines), leave it as is; existing
   feature folders follow their own format.
 - `.agent/docs/` — each doc from its template in `templates/docs/`, one per its own task — Tasks
-  3…N. Same marker rule: wrap on create, replace only between markers on a re-run, skip untouched
-  if markerless.
+  3…N. Follow the marker rule.
 - `.agent/features/` — Task N+1. Never marker-wrapped; these are living, hand-maintained documents,
   not regenerated content (see why at the end of this bullet). Existing mode: one
   `.agent/features/<slug>/FEATURE.md` per feature confirmed in Task 1/N+1, written from the real code
