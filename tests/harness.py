@@ -261,17 +261,35 @@ def assert_repo(workdir):
     features_dir = os.path.join(workdir, ".agent", "features")
     skills_dir = os.path.join(workdir, ".agent", "skills")
 
-    # --- the skill drop-ins must have been removed (step 7 cleanup)
+    # --- the skill drop-ins: per SKILL.md ("Ignore Rutter itself") the run must
+    # leave rutter/ in place and remind the user about it; warn, don't fail.
     for drop in ("rutter", "rutter-doctor"):
         if os.path.exists(os.path.join(workdir, drop)):
-            fail(f"'{drop}/' is still in the repo after the run — the skill folders "
-                 f"must be deleted before finishing (step 7)")
+            warn(f"'{drop}/' is still present — expected: skill says never remove the drop-in "
+                 f"itself, only remind the user it is safe to delete now")
 
     # --- AGENTS.md: exists, marker-wrapped; fresh-run markers are first/last lines
     check_marker_pair(agents, strict_first_last=True)
 
     # --- no unresolved template tokens anywhere; TODO(you) tallied against spec
     todo_files = []
+    # marker-wrapped verbatim template copies (standard process docs copied straight
+    # from templates, e.g. .agent/docs/TASK-CREATION.md) carry template-sanctioned
+    # text only — a "TODO(you)" inside one is sample format text, never an agent
+    # leaving an unresolved placeholder, so exempt them from the scan
+    guide_tpl = {}
+    for guide in ("FEATURE-CREATION", "TASK-CREATION", "SKILL-CREATION"):
+        tpl = os.path.join(TEMPLATES, "docs", f"{guide}.template.md")
+        if os.path.exists(tpl):
+            guide_tpl[guide] = read(tpl).split("-->", 1)[1].strip()
+    def is_verbatim_guide(path):
+        begins, ends = marker_positions(path)
+        if len(begins) != 1 or len(ends) != 1 or begins[0] >= ends[0]:
+            return False
+        lines = read(path).splitlines()
+        # begins/ends are 1-based line numbers; content sits between them (exclusive)
+        body = "\n".join(lines[begins[0] : ends[0] - 1]).strip()
+        return any(body == tpl for tpl in guide_tpl.values())
     for base, name in md_walk(workdir):
         p = os.path.join(base, name)
         text = read(p)
@@ -283,6 +301,8 @@ def assert_repo(workdir):
                 inside = not inside
                 continue
             if not inside and "TODO(you):" in line:
+                if is_verbatim_guide(p):
+                    continue
                 todo_files.append(rel(p))
     if todo_files and spec.get("todo_policy", "none") != "any":
         fail(f"TODO(you): left behind in {sorted(set(todo_files))} — spec allows none; "
