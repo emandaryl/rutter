@@ -237,7 +237,7 @@ never a `✗ Fail`, because it is a judgement about quality.
    (`plugin-logs`) are fine.
 2. **Coverage.** List the repo's significant source files (exclude `node_modules`, `vendor/`,
    build output such as `dist/` and `build/`, lockfiles, tests, `rutter/`, `rutter-doctor/`, and
-   generated files, `tsconfig*.json` and hash files such as `.source-hash`). For each, check whether its path or filename appears in some `FEATURE.md`
+   generated files, `tsconfig*.json`, and the fingerprint file `.agent/.rutter-state.json`). For each, check whether its path or filename appears in some `FEATURE.md`
    (Package Structure) or in `AGENTS.md`. Report the files mentioned nowhere, grouped by folder.
    If more than ~15% of significant files are unmentioned, say so plainly.
 3. **Overlap.** Treat brace lists such as `frontend/src/{main,api,theme}.ts` as naming each

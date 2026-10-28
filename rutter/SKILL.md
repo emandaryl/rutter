@@ -150,21 +150,27 @@ back to `AGENTS.md`. Three groups:
 
 | Adapter | Path | Notes |
 |---|---|---|
-| Claude Code | `CLAUDE.md` | Claude Code does not read `AGENTS.md` on its own when a `CLAUDE.md` exists, so this pointer is required. |
+| Claude Code | `CLAUDE.md` | Claude Code reads `CLAUDE.md` when present and, since v2.1.277 (September 2026), falls back to `AGENTS.md` only when no `CLAUDE.md` exists — so the pointer still guarantees the context loads, and doubles as the home for Claude-specific notes outside the markers. (The fallback is not yet on Bedrock/Vertex/Foundry.) |
 | Gemini CLI + Antigravity | `GEMINI.md` | Gemini CLI reads `GEMINI.md`. Google Antigravity reads both `GEMINI.md` and `AGENTS.md`, with `GEMINI.md` taking precedence on conflict, so one `GEMINI.md` pointer covers both and stops it overriding `AGENTS.md` with stale rules. |
 
-**2. Read `AGENTS.md` natively — no file is created.** Codex CLI (its primary config file),
-Antigravity (v1.20.3+), and other tools that follow the AGENTS.md convention (e.g. OpenCode, Amp,
-Zed) read the root `AGENTS.md` directly, so a pointer would only add a second file to maintain.
+**2. Read `AGENTS.md` natively — no file is created.** Codex CLI (its primary config file), Cursor
+(native `AGENTS.md` support at the project root), Antigravity (v1.20.3+), and other tools that
+follow the AGENTS.md convention (e.g. OpenCode, Amp, Zed) read the root `AGENTS.md` directly, so a
+pointer would only add a second file to maintain.
 List these in Task 2's proposal and the Final report as "covered natively by `AGENTS.md`", so the
 user can see Codex etc. were considered and not forgotten. Do not claim a tool reads `AGENTS.md`
-unless it is named here or the user says so.
+unless it is named here, the user says so, or you verified it in that tool's current documentation
+during this run — and say which of the three your claim rests on.
+
+**Tool support drifts.** These named-tool lists reflect how the tools behaved around this file's
+last update, and AGENTS.md support is spreading fast. If the user references a tool that is on
+neither list, or one that plausibly changed recently, check that tool's current documentation
+before deciding whether an adapter is needed, and say what you relied on.
 
 **3. Optional — created on evidence, or when the user picks them at Task 2:**
 
 | Adapter | Path | Evidence that it is in use |
 |---|---|---|
-| Cursor | `.cursor/rules/project.mdc` | A `.cursor/` directory (rules, settings, etc.). |
 | GitHub Copilot | `.github/copilot-instructions.md` | An existing `.github/copilot-instructions.md`, or `github.copilot.*` keys in `.vscode/settings.json`. |
 | Windsurf | `.windsurfrules` | A `.windsurf/` or `.codeium/` directory. |
 | Roo Code / Cline | `.clinerules` | An existing `.clinerules` file or `.roomodes` file. |
@@ -408,7 +414,7 @@ tasks in the table below **in order, one at a time**:
 | Task | Proposes |
 |---|---|
 | 1. Discovery / Intake | The detected mode (step 1) plus its findings: existing → detected stack, layout, commands to confirm or correct; greenfield → the intake questions (step 3b). This task's answers become the grounding for every task after it. |
-| 2. `AGENTS.md` + adapters + creation guides | A two-line summary of what `AGENTS.md` will document, which adapters (step 2) will be created alongside it, and that the three standard creation guides (`FEATURE-CREATION.md`, `TASK-CREATION.md`, `SKILL-CREATION.md` in `.agent/docs/`) will be written verbatim from templates (minus any whose format an existing skill or doc already owns, per step 3a, which `AGENTS.md` will point at instead). Written together since adapters are trivial pointers and the guides are verbatim standard text — neither has unique content of its own. The proposal always (a) names the core adapters (`CLAUDE.md`, `GEMINI.md`), (b) states which tools are covered natively by `AGENTS.md` (Codex CLI, Antigravity, etc.), and (c) lists the optional adapters (Cursor/Copilot/Windsurf/Roo-Cline/Aider) as a checklist, pre-ticked where step 2 found evidence, and asks which to include — a plain "proceed" means core plus the pre-ticked ones. |
+| 2. `AGENTS.md` + adapters + creation guides | A two-line summary of what `AGENTS.md` will document, which adapters (step 2) will be created alongside it, and that the three standard creation guides (`FEATURE-CREATION.md`, `TASK-CREATION.md`, `SKILL-CREATION.md` in `.agent/docs/`) will be written verbatim from templates (minus any whose format an existing skill or doc already owns, per step 3a, which `AGENTS.md` will point at instead). Written together since adapters are trivial pointers and the guides are verbatim standard text — neither has unique content of its own. The proposal always (a) names the core adapters (`CLAUDE.md`, `GEMINI.md`), (b) states which tools are covered natively by `AGENTS.md` (Codex CLI, Cursor, Antigravity, etc.), and (c) lists the optional adapters (Copilot/Windsurf/Roo-Cline/Aider) as a checklist, pre-ticked where step 2 found evidence, and asks which to include — a plain "proceed" means core plus the pre-ticked ones. |
 | 3…N. One task per selected `.agent/docs/` file | In this fixed order: `OVERVIEW.md`, `ARCHITECTURE.md`, then any of `SETUP/TESTING/SECURITY/DECISIONS/UI/API/FLOWS/DEPLOYMENT.md` selected in step 4. Each proposal is a two-line summary of what that specific doc will say — not the whole set at once. |
 | N+1. `.agent/features/` scaffold | Existing: the confirmed feature breakdown from step 3a (and any pre-existing `.agent/features/` content) — one line per feature: slug, scope, owning files. Greenfield: the initial feature slice(s) worked out in step 3b — name each in one line. |
 | N+2. `.agent/skills/` scaffold | Confirms `INDEX.md` will be created (header row only, unless step 3a turned up something worth seeding). |
@@ -474,9 +480,12 @@ creation guide, each `.agent/docs/` file):
 
 - `AGENTS.md` at the target repo root — Task 2. Follow the marker rule.
 - Each adapter selected in step 2, from `templates/ADAPTER.template.md` with `[FILL: ToolName]`
-  substituted (`Claude Code`, `Gemini CLI`, `Cursor`, `GitHub Copilot`, `Windsurf`, `Roo Code`,
-  `Aider`) — Task 2. Follow the marker rule. `.cursor/rules/project.mdc` needs Cursor's MDC
-  frontmatter prepended before the (markered) template body, or Cursor won't load it as an active
+  substituted (`Claude Code`, `Gemini CLI`, `GitHub Copilot`, `Windsurf`, `Roo Code`,
+  `Aider`) — Task 2. Follow the marker rule. `.cursor/rules/project.mdc` is no longer created by
+  default — Cursor reads `AGENTS.md` natively now — but it is still written when the user explicitly
+  asks for one, and still updated on re-run if an older Rutter-created one exists. When writing
+  one, prepend Cursor's MDC
+  frontmatter before the (markered) template body, or Cursor won't load it as an active
   rule:
   ```
   ---

@@ -77,9 +77,11 @@ needs to change.
   Claude Code skill needs its actual file at that path to trigger — copying it into
   `.agent/skills/` would duplicate content and not even work for its original purpose. It gets one
   row in `.agent/skills/INDEX.md` pointing back at the original path instead.
-- **Managed markers wrap the entire file**, not per-section. `<!-- rutter:begin -->` /
-  `<!-- rutter:end -->` are the first and last lines of `AGENTS.md`, each adapter, and each
-  `.agent/docs/` file. `.agent/features/` and `.agent/skills/` are *never* marker-wrapped — they're
+- **Managed markers wrap a whole managed block**, not per-section. On a fresh run, `<!-- rutter:begin -->` /
+  `<!-- rutter:end -->` are the first and last lines of the generated `AGENTS.md`, adapter, or
+  `.agent/docs/` file — but once written, user notes above the opening marker or below the closing
+  one are permanent and never flagged, and neither `SKILL.md` nor Doctor requires first/last
+  placement. `.agent/features/` and `.agent/skills/` are *never* marker-wrapped — they're
   living, hand-edited documents (Known Gotchas, task checkmarks accumulate over time), not
   regenerated content. Don't extend the marker system to them.
 - **Task 1 and Task 2 of the task loop are not skippable** (proceed/adjust only). Task 1
