@@ -13,7 +13,7 @@ How to add a feature doc, and a `references/` file when a feature outgrows one f
 
 ## FEATURE.md format
 
-The frontmatter and the first three body sections are required; add whichever deeper sections the feature needs (State Design, Data Flows, Screens, Side Effects, etc.) between "Package Structure" and "Known Gotchas".
+The frontmatter and the first three body sections are required; add whichever deeper sections the feature needs (State Design, Data Flows, Screens, Side Effects, etc.) between "Package Structure" and "Known Gotchas". Keep each section tight — 1–3 sentences or a short table per section; link to AGENTS.md conventions rather than repeating them.
 
 ```markdown
 ---

@@ -29,8 +29,7 @@ plus body if there's no evidence, rather than leaving it empty.
 
 ## What [FILL: ProjectName] Is
 
-[FILL: 1–2 sentence description of what the product/project does — draft from README.md if one
-exists and is substantive; otherwise `TODO(you): add a 1-2 sentence product description`.]
+[FILL: 1–2 sentences — what it does, who uses it, platforms. Draft from README. If unknown: `TODO(you): product description`.]
 
 ---
 
@@ -149,10 +148,7 @@ to actively look for, each only if there's real evidence:
 
 ## Domain Concepts (quick reference)
 
-[FILL: the core vocabulary of the domain — the nouns a new agent needs to know, read from real
-model/entity names in the codebase (e.g. `Order → LineItem → Product` for a commerce app, or
-`Board → List → Card` for a kanban app). Keep it to the handful of concepts that show up
-everywhere, not an exhaustive glossary.]
+[FILL: core domain nouns the agent needs, read from real model/entity names — handful only, not an exhaustive glossary.]
 
 ---
 
@@ -222,32 +218,11 @@ authoritative agent-facing reference — more accurate and up to date than `.age
 
 ### Resolving a shorthand feature instruction
 
-A request will often arrive as shorthand, not a full path — all of these must resolve the same way:
-
-- `"Read AGENTS, {name} and fix {issue}"`
-- `"Read AGENTS, {name} and work on {task}"`
-- `"Read AGENTS and feature/{name}, then {description}"`
-- `"Read AGENTS and {name}, then {description}"`
-- `"Read AGENTS.md and .agent/features/{slug}/FEATURE.md, then {description}"`
-
-**Resolution algorithm** — do this before reading anything else about the feature:
-1. Match `{name}` against the tree in this section (and the Task Files table above), tolerating
-   case differences and a `feature`/`features`/`.agent/` prefix either present or absent.
-2. If there's no exact match, try again ignoring a common project-name prefix on the slug (e.g. a
-   slug like `<project>-voice-coach` should still match a request for just `"voice-coach"`).
-3. If more than one feature plausibly matches, or nothing matches, **ask which feature is meant**
-   rather than guessing — silently picking the wrong feature wastes the whole point of scoping
-   context per feature.
-4. Once resolved, load in this order: `FEATURE.md` always; `TASKS.md` if it exists **and**
-   `{description}` reads as continuing tracked work (follow its next unchecked task); the specific
-   `references/<TOPIC>.md` file(s) `FEATURE.md` links to for the area `{description}` touches —
-   not the whole `references/` folder indiscriminately.
-5. A `{description}` that's an ad hoc bug fix or small modification, not tied to any open
-   `TASKS.md` phase, doesn't need a task file created for it — just fix it directly against the
-   context `FEATURE.md` (and any linked reference) provides. If the fix surfaces a non-obvious
-   constraint, add it to that feature's `FEATURE.md` "Known Gotchas" section before finishing,
-   the same as you would after retiring a `TASKS.md` — that section accumulates from both paths,
-   not just completed task files.
+A request like `"Read AGENTS, {name} and fix {issue}"` must resolve to `.agent/features/<slug>/FEATURE.md`.
+**Resolution algorithm:**
+1. Match `{name}` against the Feature Docs tree below, tolerating case and `feature`/`features`/`.agent/` prefixes.
+2. If ambiguous or no match, **ask which feature** — never guess.
+3. Load `FEATURE.md` always; `TASKS.md` only if continuing tracked work; the specific `references/<TOPIC>.md` files linked from `FEATURE.md` — not the whole folder.
 
 A feature may also have a `.agent/features/<name>/TASKS.md` — a phased, checkbox-driven task list
 for an active multi-step piece of work in that feature area. If one exists and the request is
