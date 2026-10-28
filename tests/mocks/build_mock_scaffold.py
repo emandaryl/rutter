@@ -191,7 +191,7 @@ def break_spec(work, which):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print(f"usage: build_mock_scaffold.py <workdir> [break:{'token,dangling,tasks,hash,todo'}]")
+        print(f"usage: build_mock_scaffold.py <workdir> [break:{'token,dangling,tasks,hash,adapter'}]")
         sys.exit(2)
     work = build(sys.argv[1])
     if len(sys.argv) > 2:
