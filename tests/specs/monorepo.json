@@ -1,0 +1,25 @@
+{
+  "mode": "existing",
+  "adapters_expected": ["CLAUDE.md", "GEMINI.md"],
+  "adapters_may_exist": [],
+  "docs_expected": ["OVERVIEW.md", "ARCHITECTURE.md", "SETUP.md", "TESTING.md", "API.md", "UI.md"],
+  "docs_absent": ["SECURITY.md", "FLOWS.md", "DEPLOYMENT.md"],
+  "docs_optional": ["DECISIONS.md"],
+  "features": {"min": 2, "max": 6, "tasks": false},
+  "must_mention": ["web/", "api/"],
+  "coverage": true,
+  "todo_policy": "none",
+  "migration": {
+    "rules": [
+      "Never hand-edit `api/app/migrations/`",
+      "shared fetch helper in `web/src/api/client.ts`",
+      "Run `make fmt` before committing"
+    ],
+    "carried_forward": [
+      "api/app/migrations/",
+      "web/src/api/client.ts",
+      "alembic",
+      "make fmt"
+    ]
+  }
+}

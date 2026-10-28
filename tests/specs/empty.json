@@ -1,0 +1,12 @@
+{
+  "mode": "greenfield",
+  "adapters_expected": ["CLAUDE.md", "GEMINI.md"],
+  "adapters_may_exist": [],
+  "docs_expected": ["OVERVIEW.md", "ARCHITECTURE.md"],
+  "docs_absent": ["SETUP.md", "TESTING.md", "SECURITY.md", "DECISIONS.md",
+                   "UI.md", "API.md", "FLOWS.md", "DEPLOYMENT.md"],
+  "docs_optional": [],
+  "features": {"min": 1, "max": 4, "tasks": true},
+  "coverage": false,
+  "todo_policy": "any"
+}

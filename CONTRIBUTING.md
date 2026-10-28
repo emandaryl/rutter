@@ -16,6 +16,7 @@ formats that keep this repo consistent, for whoever (human or agent) edits it ne
 | `README.md` | Project pitch for this repo. |
 | `rutter.zip` | Personal, local-only convenience artifact for *your own* quick unzip-and-test loop. Gitignored, never committed, not documented in README. Rebuild with the command at the bottom of this file. |
 | `rutter-backups/` | Personal version history from iterating on `SKILL.md`/`doctor-SKILL.md` locally. Gitignored, never committed, not part of what the repo distributes. |
+| `tests/` | The test harness (see "The test harness" below). Plain stdlib Python and one shell script — no dependencies, no CI. |
 
 ## Format specs — where they live
 
@@ -109,7 +110,11 @@ needs to change.
 ### Changing `SKILL.md`'s step order or numbering
 
 `SKILL.md` is full of internal cross-references like "see step 6" — these are **not**
-auto-updated, and this has been a real, recurring source of drift. After renumbering anything, run:
+auto-updated, and this has been a real, recurring source of drift. After renumbering anything,
+run `tests/run.sh self`, which executes the consistency checks below as assertions and fails with
+pointers to every stale reference (13 doc templates, per-step headings, template/pack name
+agreement, adapter paths across all four canonical homes, anchor links). The manual grep ritual
+is kept below for when you want to see the raw hits, not the verdicts:
 
 ```bash
 grep -rn "step [0-9]\|SKILL\.md step" rutter/SKILL.md rutter/templates/*.md rutter/templates/**/*.md
@@ -118,6 +123,32 @@ grep -rn "step [0-9]\|SKILL\.md step" rutter/SKILL.md rutter/templates/*.md rutt
 and manually verify every hit still points at the right content. `rutter/templates/SKILLS_INDEX.template.md`
 references a specific `SKILL.md` step number (step 6) — `rutter/templates/ADAPTER.template.md`
 references none — both are easy to forget.
+
+### The test harness
+
+`tests/` has two layers, both standard-library only:
+
+- **`tests/run.sh self`** — static consistency checks on *this* repo: the grep rituals above, as
+  executable assertions. Run after any edit to `SKILL.md`, templates, Doctor, or the HTML pages.
+- **`tests/run.sh fixture <name>` + `tests/run.sh assert <name>`** — a two-step end-to-end test.
+  `fixture` copies a fixture from `tests/fixtures/` to `$TMPDIR/rutter-work/<name>/`, drops
+  `rutter/` in, and prints the driving instructions from `tests/specs/<name>.md`; a human or agent
+  then actually executes Rutter against the copy; `assert` checks the scaffold against
+  `tests/specs/<name>.json` (doc selection, adapter set, marker pairs, template-token leaks,
+  migration fidelity of an existing `AGENTS.md`, feature slugs, link resolution, the state file).
+- **`tests/run.sh check-harness`** — validates the assertion layer itself: builds a mock scaffold
+  (`tests/mocks/build_mock_scaffold.py`), checks it passes, then checks each deliberately-broken
+  variant (`token`, `dangling`, `tasks`, `hash`, `adapter`) fails.
+
+Fixtures worth knowing: `rn-trap` (an Expo app whose `android/`+`ios/` folders exist to fool
+platform detection, plus a markerless hand-written `CLAUDE.md` that must stay byte-identical and
+a `.claude` skill that must be cross-referenced), `monorepo` (web/ + api/ with a pre-existing
+hand-written `AGENTS.md` — exercises the Migrate path and the nothing-dropped rule), and `empty`
+(greenfield intake with deliberate open questions — exercises `TODO(you)` and everything-absent).
+
+When you change behavior in `SKILL.md` or a template in a way the fixtures can observe, update the
+matching `tests/specs/<name>.json` in the same commit — a test that still passes after the spec
+change is a test that has stopped testing the new behavior.
 
 ### Adding or removing a conditional `.agent/docs/` file
 
@@ -167,6 +198,8 @@ the spec changes and nobody goes back to check.
   ```
   The `-x "*.git*"` exclusion matters if a `.git/` ever ends up inside `rutter/` again — it must
   never ship inside the packaged skill.
-- No CI, no build step, no package manifest — this is plain markdown plus two static HTML files.
-  "Testing" a change means re-checking `SKILL.md` for internal consistency (see above) and,
-  ideally, actually running it against a real repo end to end.
+- No CI, no build step, no package manifest — plain markdown, two static HTML files, and a
+  stdlib-only Python/shell test harness. Everything the harness checks is what this file used to
+  ask you to check by hand; treat a `tests/run.sh self` failure as a failed edit, and run both
+  `self` and `check-harness` before committing anything that touches `rutter/`, `rutter-doctor/`,
+  the HTML pages, or `tests/` itself.

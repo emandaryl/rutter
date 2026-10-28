@@ -1,0 +1,17 @@
+[project]
+name = "meridian-api"
+version = "0.2.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.32",
+    "sqlalchemy>=2.0",
+    "alembic>=1.13",
+    "pydantic>=2.9",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.0", "ruff>=0.8"]
+
+[tool.ruff]
+line-length = 100

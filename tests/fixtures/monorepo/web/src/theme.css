@@ -1,0 +1,13 @@
+/* Design tokens for the whole front end. Components use the custom properties,
+   never raw hex. New tokens go here first. */
+:root {
+  --bg: #fcfbf7;
+  --surface: #ffffff;
+  --ink: #262a28;
+  --muted: #718077;
+  --accent: #2e6f57;
+  --danger: #b23a1e;
+  --radius: 8px;
+  --font-body: 15px;
+  --font-heading: 21px;
+}
