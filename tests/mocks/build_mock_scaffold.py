@@ -102,6 +102,10 @@ def build(work):
         "|---|---|",
         "| A new feature | `.agent/docs/FEATURE-CREATION.md` |",
         "| A TASKS.md | `.agent/docs/TASK-CREATION.md` |",
+        "",
+        "## After Every Task: Keep the Docs Current [STANDARD]",
+        "",
+        "Update the matching FEATURE.md and any touched `.agent/docs/` file in the same change.",
     ])))
 
     write(os.path.join(docs, "OVERVIEW.md"), wrap("\n".join([

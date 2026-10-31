@@ -158,7 +158,7 @@ to actively look for, each only if there's real evidence:
 
 **Before creating or restructuring any `TASKS.md`, read `.agent/docs/TASK-CREATION.md` and follow its format exactly — do not write one from memory.**
 
-**Managed content.** Anything between `<!-- rutter:begin -->` and `<!-- rutter:end -->` in `AGENTS.md`, the adapters and `.agent/docs/` files is managed: a task-completing agent may update it directly (the doc-currency rule in every `TASKS.md`). Anything outside the markers is a human's own notes — never touch it.
+**Managed content.** Anything between the rutter begin and end marker comments in `AGENTS.md`, the adapters and `.agent/docs/` files is managed: a task-completing agent may update it directly (the doc-currency rule in every `TASKS.md`). Anything outside the markers is a human's own notes — never touch it.
 
 Each feature has its own task file at `.agent/features/<feature-name>/TASKS.md`. New rows are added
 to the table below as features are created — see "Creating a Feature / Reference / Task" at the
@@ -222,7 +222,8 @@ A request like `"Read AGENTS, {name} and fix {issue}"` must resolve to `.agent/f
 **Resolution algorithm:**
 1. Match `{name}` against the Feature Docs tree below, tolerating case and `feature`/`features`/`.agent/` prefixes.
 2. If ambiguous or no match, **ask which feature** — never guess.
-3. Load `FEATURE.md` always; `TASKS.md` only if continuing tracked work; the specific `references/<TOPIC>.md` files linked from `FEATURE.md` — not the whole folder.
+3. Ad hoc bug fix or small change: no task file needed; work from `FEATURE.md`, and if it surfaces a non-obvious constraint, add it to that feature's Known Gotchas before finishing.
+4. Load `FEATURE.md` always; `TASKS.md` only if continuing tracked work; the specific `references/<TOPIC>.md` files linked from `FEATURE.md` — not the whole folder.
 
 A feature may also have a `.agent/features/<name>/TASKS.md` — a phased, checkbox-driven task list
 for an active multi-step piece of work in that feature area. If one exists and the request is
@@ -273,3 +274,16 @@ Read the matching guide before creating anything — never write these from memo
 | A skill | `.agent/docs/SKILL-CREATION.md` |
 
 After adding a feature, add it to the tree in "Feature Docs" and, if it has a `TASKS.md`, to the Task Files table. When a feature's work is done, fold permanent gotchas into its `FEATURE.md` "Known Gotchas" and archive the `TASKS.md` as described in "Feature Docs" above.
+
+---
+
+## After Every Task: Keep the Docs Current [STANDARD]
+
+When you finish any task, in the same change as the code:
+
+1. Update the matching `.agent/features/<slug>/FEATURE.md`: Package Structure for any file added, moved or removed; Known Gotchas for anything non-obvious you hit; the Architecture paragraph if the shape changed.
+2. Update any `.agent/docs/` file the change touches: `API.md` (endpoints, models), `UI.md` (tokens, components), `SETUP.md` (commands, ports, prerequisites), `ARCHITECTURE.md` (data flows), `DECISIONS.md` (a new non-obvious decision, with the why). Only files that exist.
+3. Update the project plan (e.g. `docs/PLAN.md`) if one exists and scope, phase order or a decision changed, and the root `README.md` if run steps changed.
+4. If a doc line is now wrong, fix the line. Do not leave stale text for later.
+
+Do not re-run Rutter to do this; edit the docs directly and keep changes small.

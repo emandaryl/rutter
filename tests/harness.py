@@ -271,6 +271,14 @@ def assert_repo(workdir):
     # --- AGENTS.md: exists, marker-wrapped; fresh-run markers are first/last lines
     check_marker_pair(agents, strict_first_last=True)
 
+    # --- every [STANDARD] process section the template ships must survive into AGENTS.md
+    agents_text = read(agents)
+    for heading in ("Task Files", "App-Wide Docs", "Feature Docs", "Skills",
+                    "Creating a Feature", "After Every Task: Keep the Docs Current"):
+        if not re.search(r"^## " + re.escape(heading), agents_text, re.M):
+            fail(f"AGENTS.md is missing the standard '{heading}' section "
+                 f"(AGENTS.template.md ships it verbatim)")
+
     # --- no unresolved template tokens anywhere; TODO(you) tallied against spec
     todo_files = []
     # marker-wrapped verbatim template copies (standard process docs copied straight

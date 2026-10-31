@@ -40,7 +40,7 @@ Read rutter-doctor/SKILL.md and follow it against this repository.
 
 ## What happens next
 
-Doctor runs eight non-destructive checks against your documentation. The core ones:
+Doctor runs nine non-destructive checks against your documentation. The core ones:
 
 1. **Marker integrity** — confirms managed markers (`<!-- rutter:begin/end -->`) are intact.
 2. **Reference & link verification** — verifies every file path in tables, trees, and markdown links
@@ -49,7 +49,7 @@ Doctor runs eight non-destructive checks against your documentation. The core on
 4. **Living-doc health** — validates required feature sections, checks for orphaned feature folders,
    and verifies skill/archive conventions.
 5. **Context budget** — warns if `AGENTS.md` is exceeding its line budget.
-6. **Migration fidelity**, 7. **Feature boundaries**, 8. **Source fingerprint** — catch lost content after a migration, mis-scoped feature docs, and a stale scaffold.
+6. **Migration fidelity**, 7. **Feature boundaries**, 8. **Source fingerprint**, 9. **Standard sections** — catch lost content after a migration, mis-scoped feature docs, a stale scaffold, and an `AGENTS.md` missing standard sections newer Rutter versions add.
 
 Doctor **reports only and never writes**. When findings are reported, you remain at the helm —
 resolve them using standard Rutter shorthand:

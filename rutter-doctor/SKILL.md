@@ -31,8 +31,8 @@ move, markers get accidentally edited, and context files grow over time.
    - `✓` **Pass** — Check fully satisfied; no issues found.
    - `⚠` **Warn** — Soft drift or non-breaking item: ungrounded `TODO(you)` gaps, context budget
      exceeding ~150–200 lines (soft guideline, never `✗`), or minor formatting irregularities.
-   - `✗` **Fail** — Structural break: broken or missing `<!-- rutter:begin -->` / `<!-- rutter:end -->`
-     markers, dead links or references to non-existent files, missing required sections in a
+   - `✗` **Fail** — Structural break: broken (unpaired, duplicated or out-of-order) `<!-- rutter:begin -->` / `<!-- rutter:end -->`
+     markers (a file with no markers at all is hand-written, reported as `ℹ`, not failed), dead links or references to non-existent files, missing required sections in a
      `FEATURE.md`, orphaned feature folders lacking `FEATURE.md`, or invalid archive filenames.
 
 ---
@@ -71,8 +71,18 @@ file preserves intact markers.
    hand-written notes. It is expected and allowed: never flag it, and never require the markers to
    be the first or last line of the file. Rutter's own re-run logic replaces only what is between
    the markers.
-4. If a marker is missing, duplicated, out of order, or the block is empty, flag `✗ Fail` with the
-   file and what was found. Otherwise report `✓ Pass`.
+4. **Markerless files are hand-written, not broken.** Rutter never overwrites an existing file that
+   has no markers (an adapter, an `.agent/docs/` file such as a hand-written `prd.md` or
+   `architecture.md`, or an `AGENTS.md` the user chose to hand-edit). If a file has **zero** marker
+   lines, do not fail it: report it as `ℹ` ("hand-written, not Rutter-managed; skipped") and, for
+   `AGENTS.md` only, `⚠ Warn` that Rutter's managed sections and drift checks will not apply until it
+   is migrated. A `.agent/docs/` file is expected to be markerless when it has no Rutter counterpart.
+   **Exception:** a markerless `CLAUDE.md` or `GEMINI.md` that never mentions `AGENTS.md` is
+   `⚠ Warn` ("tool may never load AGENTS.md; add a one-line pointer"), because Claude Code and Gemini
+   CLI prefer their own file over `AGENTS.md`.
+5. If a file has some marker lines but they are wrong (one without the other, duplicated, out of
+   order, or an empty block), flag `✗ Fail` with the file and what was found. Otherwise report
+   `✓ Pass`.
 
 > **Why whole-line marker matching:** a raw `grep -c` counts prose that merely mentions the marker
 > syntax (e.g. in a "Coding Conventions" note), giving false failures. Matching only whole-line
@@ -107,7 +117,9 @@ validates all referenced file paths.
    `mailto:`).
    Also ignore paths that only appear in `[STANDARD]` sections or fenced code blocks as generic
    examples or placeholders (e.g. `.agent/skills/<skill-name>/SKILL.md`, `TASKS-v{N}.md`); resolve
-   only paths that name a real file the project is meant to have.
+   only paths that name a real file the project is meant to have. Likewise ignore conditional
+   references in `[STANDARD]` prose ("only files that exist", "if one exists", e.g. `DECISIONS.md`,
+   `docs/PLAN.md`).
 2. Resolve relative paths relative to the file containing the reference (or repo root for root docs).
 3. Check whether the target file or directory exists on disk, comparing names case-insensitively (a
    tree entry `ARCHITECTURE.md` resolves to an on-disk `architecture.md`). A case-only difference is
@@ -128,12 +140,15 @@ remaining gaps so the user knows what needs human attention.
    - `TODO(you):`
    - `[FILL:`
    **Ignore text that Rutter copies verbatim.** The `.agent/docs/*-CREATION.md` guides are standard text throughout, so skip them entirely; and `AGENTS.md` contains `[STANDARD]` sections (Task
-   Files, Feature Docs, Skills, Creating-a-Feature, and the shared-abstractions rule) whose text
+   Files, App-Wide Docs, Feature Docs, Skills, Creating-a-Feature, After-Every-Task, and the
+   shared-abstractions rule) whose text
    legitimately mentions `TODO(you)` and `[FILL:` as instructions, usually inside code fences. Skip
-   any hit that is (a) inside a fenced code block, (b) inside a `[STANDARD]` section, or (c) a
-   backticked mention (`` `TODO(you)` ``) rather than a line that starts a gap. A real gap is a
-   line in a project-specific section of the form `TODO(you): <explanation>`, or an unreplaced
-   `[FILL: ...]` token outside any code fence. If unsure, report the hit as "likely a mention,
+   any hit that is (a) inside a fenced code block **within a `[STANDARD]` section or a verbatim guide**
+   (a fence in a project-specific section, such as the Package Structure tree, can hold a real gap),
+   (b) inside a `[STANDARD]` section, or (c) a backticked mention (`` `TODO(you)` ``), which also
+   covers the boilerplate in `TASKS.md` instruction blocks. A real gap is any unbackticked
+   `TODO(you): <explanation>` in a project-specific section, at the start of a line or after a label
+   such as `**Build config:**`, or an unreplaced `[FILL: ...]` token outside a standard fence. If unsure, report the hit as "likely a mention,
    not a gap" instead of counting it.
 2. Tally total occurrences and group findings by file and line number.
 3. If findings > 0: report `⚠ Warn` listing the count and specific locations. (This is a warning
@@ -180,7 +195,8 @@ This check verifies feature completeness, orphan directories, and valid archivin
      downgrade every miss to `⚠ Warn`: the structure belongs to the owner, not to Rutter.
    - Items from the newer format that older task files may predate are `⚠ Warn`, never `✗ Fail`: no
      `## Open Questions` section, or a phase with no `### Phase {N} Code Review` checklist.
-5. If nothing is flagged, report `✓ Pass`.
+5. Report `✗ Fail` if any failure above was flagged, else `⚠ Warn` if only warnings were, else
+   `✓ Pass`. (Check 4 has all three outcomes.)
 
 ---
 
@@ -189,7 +205,7 @@ This check verifies feature completeness, orphan directories, and valid archivin
 `AGENTS.md` is designed as a harbor chart, not an encyclopedia. Its budget applies to the
 project-specific sections only — roughly ~150–200 lines — per `AGENTS.template.md`'s own "Context
 Budget" note. The mandatory `[STANDARD]` process sections (Task Files, Feature Docs, Skills,
-Creating-a-Feature) are fixed, copied-verbatim overhead of roughly 170 lines and are expected on every file regardless of project size — they are not what this check is watching for. A typical, healthy `AGENTS.md` therefore lands around 250–350 lines total; that is normal, not bloat. (A repo scaffolded before the creation guides existed still carries the format specs inline and lands around 450–550 lines; it will warn here until Rutter is re-run, which moves those specs out to `.agent/docs/*-CREATION.md`.)
+Creating-a-Feature, After-Every-Task) are fixed, copied-verbatim overhead of roughly 185 lines and are expected on every file regardless of project size — they are not what this check is watching for. A typical, healthy `AGENTS.md` therefore lands around 265–365 lines total; that is normal, not bloat. (A repo scaffolded before the creation guides existed still carries the format specs inline and lands around 450–550 lines; it will warn here until Rutter is re-run, which moves those specs out to `.agent/docs/*-CREATION.md`.)
 
 ### Procedure
 1. Count the total lines in `AGENTS.md`.
@@ -237,9 +253,10 @@ never a `✗ Fail`, because it is a judgement about quality.
    (`plugin-logs`) are fine.
 2. **Coverage.** List the repo's significant source files (exclude `node_modules`, `vendor/`,
    build output such as `dist/` and `build/`, lockfiles, tests, `rutter/`, `rutter-doctor/`, and
-   generated files, `tsconfig*.json`, and the fingerprint file `.agent/.rutter-state.json`). For each, check whether its path or filename appears in some `FEATURE.md`
-   (Package Structure) or in `AGENTS.md`. Report the files mentioned nowhere, grouped by folder.
-   If more than ~15% of significant files are unmentioned, say so plainly.
+   generated files, `tsconfig*.json`, `AGENTS.old.md`, dotfiles such as `.gitignore`, `.claude/skills/*` (a skill is covered by its `INDEX.md` row), `README.md`, and the fingerprint file `.agent/.rutter-state.json`). For each, check whether its path or filename appears in some `FEATURE.md`
+   (Package Structure or Known Gotchas), in `AGENTS.md`, or in `.agent/skills/INDEX.md`. Report the files mentioned nowhere, grouped by folder.
+   If more than ~15% of significant files are unmentioned, say so plainly and report `⚠ Warn`; at or under
+   ~15%, list them as `ℹ` and keep the check `✓ Pass`.
 3. **Overlap.** Treat brace lists such as `frontend/src/{main,api,theme}.ts` as naming each
    expanded path (`main.ts`, `api.ts`, `theme.ts`) when checking coverage and overlap. Match files by their **full repo-relative path** (`plugins/logs/backend.py`), never
    by bare filename: many plugins legitimately share names like `backend.py`, `frontend.ts`,
@@ -272,7 +289,9 @@ Always `⚠ Warn` at worst, never `✗ Fail`.
 ### Procedure
 1. If `.agent/.rutter-state.json` is missing, report `⚠ Warn: no fingerprint (run Rutter once to
    record one)` and stop.
-2. Recompute the same short hashes (first 12 hex chars of SHA-256; or size and modification time if
+2. Parse the state file as JSON (never grep or count its lines; it has top-level keys beside
+   `files`). Rutter fingerprints docs such as `README.md` as well as code, so a repo with no code can have a
+   state file listing only docs. Recompute the same short hashes (first 12 hex chars of SHA-256; or size and modification time if
    that is what the file recorded) for the files it lists, and also find significant source files
    that are not in it. Do not modify the state file.
 3. Report `✓ Pass` if nothing changed. Otherwise `⚠ Warn` listing changed, added and removed files
@@ -281,7 +300,27 @@ Always `⚠ Warn` at worst, never `✗ Fail`.
 
 ---
 
+## Check 9: Standard Sections Present
+
+`AGENTS.md` carries `[STANDARD]` process sections that Rutter copies verbatim. A repo scaffolded by
+an older Rutter may predate some of them, so agents there miss rules newer runs include. Always
+`⚠ Warn` at worst, never `✗ Fail`: nothing is broken, the file is just behind.
+
+### Procedure
+1. Skip with `- Check 9: skipped (AGENTS.md has no Rutter markers)` if Check 1 found `AGENTS.md`
+   markerless.
+2. Confirm `AGENTS.md` has a heading for each of: Task Files, App-Wide Docs, Feature Docs, Skills,
+   Creating a Feature / Reference / Task / Skill, and After Every Task: Keep the Docs Current. A
+   heading counts if it starts with that text; ignore anything inside a fenced code block.
+3. Report `✓ Pass` if all are present. Otherwise `⚠ Warn` naming each missing section and advise:
+   "scaffolded by an older Rutter; re-run Rutter to add it". (Content outside the markers is kept.)
+
+---
+
 ## Output Report
+
+A skipped check prints `- Check N: skipped (<reason>)` and is counted separately in the final tally
+("· 1 skipped"), never as a pass.
 
 At the conclusion of the audit, display a concise findings summary followed by actionable next steps.
 
@@ -309,7 +348,12 @@ At the conclusion of the audit, display a concise findings summary followed by a
   - .agent/features/core-backend/: named for a layer, not a capability
   - backend/ports.py, backend/external.py: not mentioned in any FEATURE.md
 
-Overall: 2 checks passed · 2 warnings · 2 failures
+⚠ Check 8: Source Fingerprint (3 files changed since the last run)
+  - api/routes.py, api/models.py, web/src/App.tsx: docs may be stale; re-run Rutter
+⚠ Check 9: Standard Sections Present (1 missing)
+  - AGENTS.md: no "After Every Task: Keep the Docs Current" section; re-run Rutter
+
+Overall: 1 check passed · 6 warnings · 2 failures
 ```
 
 **This block illustrates the report's format only** — indentation, grouping, the final tally line.

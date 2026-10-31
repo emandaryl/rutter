@@ -1,7 +1,7 @@
 ---
 name: rutter
 description: >
-  Scaffold a project's AI-agent context system by reading the repo (or, if empty, a short intake): a root AGENTS.md, thin per-tool adapters (CLAUDE.md, GEMINI.md, Cursor, Copilot, Windsurf, Cline, Aider) pointing back to it, plus .agent/docs/, .agent/features/ and .agent/skills/. Works task by task: each document is proposed first and the user can proceed, adjust, or skip. Migrates existing hand-written docs without losing content. Re-runs update only content between rutter:begin/end markers. Use for "set up AGENTS.md", "scaffold agent docs", "add a CLAUDE.md/GEMINI.md/Cursor/Copilot adapter", "run Rutter" or "re-run Rutter". Works for any stack.
+  Scaffold a project's AI-agent context system by reading the repo (or, if empty, a short intake): a root AGENTS.md, thin per-tool adapters (CLAUDE.md, GEMINI.md, plus Copilot, Windsurf, Cline, Aider on request or evidence) pointing back to it, plus .agent/docs/, .agent/features/ and .agent/skills/. Works task by task: each document is proposed first and the user can proceed, adjust, or skip. Migrates existing hand-written docs without losing content. Re-runs update only content between rutter:begin/end markers. Use for "set up AGENTS.md", "scaffold agent docs", "add a CLAUDE.md/GEMINI.md/Cursor/Copilot adapter", "run Rutter" or "re-run Rutter". Works for any stack.
 ---
 
 # Rutter
@@ -91,6 +91,10 @@ Apply the same three-way check independently to each adapter path (`CLAUDE.md`, 
 Rutter-managed `CLAUDE.md`, and vice versa. A markerless adapter or doc file is left untouched with
 no prompt (unlike `AGENTS.md`, these are low-stakes enough not to interrupt the run for) — note
 what was left untouched, and why, in the final summary.
+**Warn when a markerless `CLAUDE.md` or `GEMINI.md` is left untouched.** Claude Code reads
+`CLAUDE.md` in preference to `AGENTS.md`, so a hand-written one that never mentions `AGENTS.md` means that
+tool will not load Rutter's context. Say so in the Final report and suggest a one-line pointer
+("Read `AGENTS.md` first") the user can add above or below their own notes. Never add it yourself.
 
 **Match file and folder names case-insensitively** in every existence check above and below
 (default macOS and Windows disks are case-insensitive anyway). An existing `.agent/docs/architecture.md`
@@ -247,6 +251,8 @@ checklist as a guide:
 
 - Manifests/lockfiles → Tech Stack table + Build config line.
 - Top 2-3 levels of the primary source tree → Package Structure, annotated one line per folder.
+  Write each folder as its full repo-relative path (`src/screens/`, not `screens/` nested under a `src/`
+  line) so a reader or grep can match it.
 - Entry points, state containers, how the UI layer subscribes to state → Architecture Pattern
   paragraph (and a short diagram if the layering is clear).
 - Any DB/ORM found in dependencies → Data Layer Conventions (skip the section if none).
@@ -359,7 +365,11 @@ whole MVP.
 `OVERVIEW.md` and `ARCHITECTURE.md` are always created, and so are the three creation guides
 (`FEATURE-CREATION.md`, `TASK-CREATION.md`, `SKILL-CREATION.md` — verbatim standard docs written in
 Task 2, not selected here; a guide is skipped when step 3a found an existing owner of that format). For each of the rest, create it only on
-real evidence found in step 3 — never on platform alone. In greenfield mode, an intake answer
+real evidence found in step 3 — never on platform alone. In existing mode, evidence means code or
+config you opened that actually implements the thing and is wired in (a live auth check, a test suite, a CI
+file); a claim in a README or comment that the code does not back up, or a stub nothing calls (an unused
+token setter), is not evidence (record the mismatch under
+"Docs that disagree with the code" instead). In greenfield mode, an intake answer
 counts as evidence the same way a code finding does in existing mode (e.g. "it'll have user
 accounts" is evidence for `SECURITY.md`); most rows will have no evidence yet and stay unselected,
 and `ARCHITECTURE.md` describes the planned shape from the intake rather than an as-built one.
@@ -371,7 +381,7 @@ and `ARCHITECTURE.md` describes the planned shape from the intake rather than an
 | `SECURITY.md` | Auth/session handling or sensitive-data handling is present (or stated in intake) |
 | `DECISIONS.md` | Existing ADRs/changelog rationale to migrate in (including decision or "why" text inside hand-written docs like `DESIGN.md`), a genuinely non-obvious choice actually found in the codebase worth recording now, or — greenfield only — a real choice Rutter itself made during intake because the user explicitly delegated it (e.g. "you decide the stack"); same evidence bar as the rest of this table otherwise, no exceptions |
 | `UI.md` | A UI layer with its own styling conventions: a design system, a component library, or a shared theme (CSS variables, design tokens, a theming module) that new UI must follow. A theme file or stylesheet of variables counts even without a formal design system. |
-| `API.md` | A REST/GraphQL/RPC surface exists (or stated as planned in intake) |
+| `API.md` | This repo defines or serves a REST/GraphQL/RPC surface (or intake says one is planned). A client that only consumes an external API does not qualify: describe that contract in `ARCHITECTURE.md` |
 | `FLOWS.md` | An end-user UI with **three or more distinct screens, views or tabs** that a user moves between (apps — not pure libraries/CLIs/backends, and not a single-page tool). Fewer than three: fold the journey into `OVERVIEW.md` instead. Apply this test the same way every run. |
 | `DEPLOYMENT.md` | CI/CD or release config exists |
 
@@ -476,7 +486,7 @@ creation guide, each `.agent/docs/` file):
   first and last lines (step 0 guaranteed none existed, or none without markers).
 - **Re-run:** replace only the content between the existing markers with the freshly drafted
   version; leave anything outside them exactly as written.
-- **Markerless existing file:** step 0 found it markerless — leave it untouched and skip it.
+- **Markerless existing file:** step 0 found it markerless — leave it untouched and skip it. (`AGENTS.md` is the exception: step 0 stops and offers Migrate, Regenerate, Hand-edit or Stop.)
 
 - `AGENTS.md` at the target repo root — Task 2. Follow the marker rule.
 - Each adapter selected in step 2, from `templates/ADAPTER.template.md` with `[FILL: ToolName]`
