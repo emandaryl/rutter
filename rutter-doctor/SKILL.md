@@ -54,6 +54,8 @@ file preserves intact markers.
   - `.clinerules`
   - `.aider.conventions.md`
 - All files in `.agent/docs/*.md`
+- `.claude/agents/*.md` (`explorer`, `doc-updater`, `test-runner`, `task-tracker`, `committer`, `code-reviewer`), if present (markers sit after the
+  YAML frontmatter, so the begin marker need not be line 1 here)
 
 > **Note on adapters:** Repos typically configure a subset of the supported adapters. Doctor only
 > checks the adapter files that actually exist on disk. Missing adapter files are normal and
@@ -310,10 +312,52 @@ an older Rutter may predate some of them, so agents there miss rules newer runs 
 1. Skip with `- Check 9: skipped (AGENTS.md has no Rutter markers)` if Check 1 found `AGENTS.md`
    markerless.
 2. Confirm `AGENTS.md` has a heading for each of: Task Files, App-Wide Docs, Feature Docs, Skills,
-   Creating a Feature / Reference / Task / Skill, and After Every Task: Keep the Docs Current. A
+   Creating a Feature / Reference / Task / Skill, After Every Task: Keep the Docs Current, and
+   Delegation & Token Efficiency. A
    heading counts if it starts with that text; ignore anything inside a fenced code block.
 3. Report `✓ Pass` if all are present. Otherwise `⚠ Warn` naming each missing section and advise:
    "scaffolded by an older Rutter; re-run Rutter to add it". (Content outside the markers is kept.)
+
+---
+
+## Check 10: Claude Code Sub-Agents Present
+
+Rutter writes six sub-agent files to `.claude/agents/` alongside `CLAUDE.md`: `explorer`,
+`doc-updater`, `test-runner`, `task-tracker`, `committer` and `code-reviewer`. A repo scaffolded by an older Rutter
+lacks them, and one may have been deleted. Always `⚠ Warn` at worst, never `✗ Fail`.
+
+### Procedure
+1. Skip with `- Check 10: skipped (no CLAUDE.md with Rutter markers)` if `CLAUDE.md` is absent or
+   markerless: the agents only ship with a Rutter-made `CLAUDE.md`.
+2. Confirm each of the six files exists and starts with YAML frontmatter (first line `---`) that
+   has a `name:` equal to the file's basename. A file with no markers is hand-written: leave it
+   alone, count it as present.
+3. For a marker-wrapped file, run Check 1's marker rules on it.
+4. For each agent whose `tools:` includes `Bash` (`doc-updater`, `test-runner`, `committer`,
+   `code-reviewer`), confirm its frontmatter has the `agent-bash-guard.sh` PreToolUse hook and that
+   `.claude/hooks/agent-bash-guard.sh` and `agent-bash-guard.py` both exist. A missing hook file is
+   the serious case: the guard fails closed, so that agent's Bash is blocked entirely.
+5. **Guard content.** For each of `.claude/hooks/agent-bash-guard.sh` and `agent-bash-guard.py`
+   that exists and whose first lines contain `rutter-managed`, compute the first 12 hex characters
+   of its SHA-256 (normalise CRLF to LF first) and compare with this table, which Rutter keeps in
+   sync with the shipped files:
+
+   | File | Expected SHA-256 (first 12 hex) |
+   |---|---|
+   | `agent-bash-guard.sh` | c7fe5853850c |
+   | `agent-bash-guard.py` | b8c809e5c0ec |
+
+   A mismatch means the copy was hand-edited or comes from a different Rutter version, so its
+   protections may be weaker than documented: `⚠ Warn` and advise "re-run Rutter to refresh it, or
+   keep your edits and delete the `rutter-managed` line to mark the file as yours". A file without
+   `rutter-managed` is hand-written: leave it alone and do not compare.
+6. If `.claude/hooks/agent-bash-allow.txt` exists, confirm it has at least one non-comment line
+   (an empty allowlist blocks every `test-runner` command) and that each listed prefix still
+   appears in `TESTING.md`, `SETUP.md`, the manifest scripts or the Makefile; a prefix that no
+   longer exists is stale, report it.
+7. Report `✓ Pass` if all six are present and every check above held. Otherwise `⚠ Warn` naming each missing or malformed
+   file or hook and advise: "scaffolded by an older Rutter, or deleted; re-run Rutter to add it". A user
+   who deliberately dropped one at Task 2 may ignore the warning.
 
 ---
 
@@ -352,6 +396,8 @@ At the conclusion of the audit, display a concise findings summary followed by a
   - api/routes.py, api/models.py, web/src/App.tsx: docs may be stale; re-run Rutter
 ⚠ Check 9: Standard Sections Present (1 missing)
   - AGENTS.md: no "After Every Task: Keep the Docs Current" section; re-run Rutter
+⚠ Check 10: Claude Code Sub-Agents Present (2 missing)
+  - .claude/agents/committer.md, .claude/agents/test-runner.md: not found; re-run Rutter
 
 Overall: 1 check passed · 6 warnings · 2 failures
 ```

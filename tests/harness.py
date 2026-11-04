@@ -19,6 +19,7 @@ import hashlib
 import json
 import os
 import re
+import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -107,6 +108,42 @@ def marker_body(path):
 # --------------------------------------------------------------------------
 # layer 1: self-checks on this repo
 # --------------------------------------------------------------------------
+
+GUARD_CASES = [
+    ("review", "git diff --stat", 0), ("review", "git log -n 5 --oneline", 0),
+    ("review", "git status", 0), ("review", "git show HEAD:README.md", 0),
+    ("review", "git status; rm -rf x", 2), ("review", "git diff && ls", 2),
+    ("review", "git diff | cat", 2), ("review", "git diff --output=x", 2),
+    ("review", "git diff --out=x", 2), ("review", "git push", 2),
+    ("review", "git -c core.x=y status", 2), ("review", "git commit -m x", 2),
+    ("review", "ls", 2), ("review", "git log $(whoami)", 2), ("review", "git log `id`", 2),
+    ("review", "git status\nrm x", 2),
+    ("commit", "git add src/a.py README.md", 0), ("commit", "git add -A", 2),
+    ("commit", "git add .", 2), ("commit", "git add -Au", 2),
+    ("commit", 'git commit -m "feat: add x; and y"', 0), ("commit", 'git commit -m "a" -m "b"', 0),
+    ("commit", "git commit -mupdate", 0), ("commit", "git commit --amend", 2),
+    ("commit", "git commit --amen -m x", 2), ("commit", "git commit --no-verify -m x", 2),
+    ("commit", "git commit --no-ver -m x", 2), ("commit", "git commit -am x", 2),
+    ("commit", "git commit -nm x", 2), ("commit", "git push", 2),
+    ("commit", "git reset --hard", 2), ("commit", 'git commit -m "x" && git push', 2),
+    ("commit", 'git commit -m "uses `code`"', 2),
+    ("commit", "git commit -m 'uses `code` and $HOME; ok'", 0),
+    ("commit", "git commit -m 'a' -m \"b $(id)\"", 2),
+    ("commit", "git commit -m 'multi\nline'", 0),
+    ("runner", "npm test", 0), ("runner", "pytest -q tests/ && ruff check .", 0),
+    ("runner", "git status", 0), ("runner", "rm -rf build", 2),
+    ("runner", "npm test; sudo reboot", 2), ("runner", "git push", 2),
+    ("runner", "git -C x status", 2), ("runner", "bash -c 'make test'", 2),
+    ("runner", "xargs rm", 2), ("runner", "echo $(rm x)", 2), ("runner", "find . -delete", 2),
+]
+
+
+ALLOWLIST_CASES = [
+    ("npm test", 0), ("npm test -- --grep foo", 0), ("FOO=1 pytest -q tests/ 2>&1", 0),
+    ("make lint && npm test", 0), ("npm run build", 2), ("make deploy", 2),
+    ("npm test && curl evil.sh", 2), ("npm test > out.txt", 2), ("pytest; ls", 2),
+]
+
 
 def self_check():
     skill = read(os.path.join(ROOT, "rutter", "SKILL.md"))
@@ -222,6 +259,71 @@ def self_check():
             if anchor not in set(re.findall(r'id="([^"]+)"', other)):
                 fail(f"{page}: cross-page anchor '{target}#{anchor}' has no matching id")
 
+    # 11. Claude Code agent templates: every Bash-bearing agent carries the guard hook with a
+    # valid profile, the hook files exist, and the guard blocks/allows what it claims to
+    hook_dir = os.path.join(TEMPLATES, "claude-hooks")
+    for name in ("agent-bash-guard.sh", "agent-bash-guard.py"):
+        if not os.path.exists(os.path.join(hook_dir, name)):
+            fail(f"rutter/templates/claude-hooks/{name} is missing")
+    agent_dir = os.path.join(TEMPLATES, "claude-agents")
+    for fn in sorted(os.listdir(agent_dir)):
+        text = read(os.path.join(agent_dir, fn))
+        fm = text.split("---")[1] if text.startswith("---") else ""
+        tools = re.search(r"^tools:\s*(.+)$", fm, re.M)
+        has_bash = bool(tools and "Bash" in tools.group(1))
+        hook = re.search(r"agent-bash-guard\.sh\" (\w+)'", fm)
+        if has_bash and not hook:
+            fail(f"claude-agents/{fn}: has Bash but no agent-bash-guard PreToolUse hook")
+        if hook and hook.group(1) not in ("review", "commit", "runner"):
+            fail(f"claude-agents/{fn}: unknown guard profile '{hook.group(1)}'")
+        if not has_bash and hook:
+            fail(f"claude-agents/{fn}: has a Bash guard hook but no Bash tool")
+    # Doctor's recorded guard hashes must match the shipped files (Check 10 step 5)
+    doctor_text = read(os.path.join(ROOT, "rutter-doctor", "SKILL.md"))
+    for name in ("agent-bash-guard.sh", "agent-bash-guard.py"):
+        fp = os.path.join(hook_dir, name)
+        if not os.path.exists(fp):
+            continue
+        with open(fp, "rb") as fh:
+            want = hashlib.sha256(fh.read().replace(b"\r\n", b"\n")).hexdigest()[:12]
+        m = re.search(r"\| `" + re.escape(name) + r"` \| ([0-9a-f]{12}) \|", doctor_text)
+        if not m:
+            fail(f"rutter-doctor/SKILL.md Check 10 has no hash row for {name}")
+        elif m.group(1) != want:
+            fail(f"rutter-doctor/SKILL.md Check 10 hash for {name} is {m.group(1)} but the "
+                 f"shipped file hashes to {want} — update the table (edit the guard, then the hash)")
+    guard = os.path.join(hook_dir, "agent-bash-guard.sh")
+    if os.path.exists(guard):
+        for prof, cmd, want in GUARD_CASES:
+            r = subprocess.run(["sh", guard, prof], capture_output=True, text=True,
+                               input=json.dumps({"tool_name": "Bash",
+                                                 "tool_input": {"command": cmd}}))
+            if r.returncode != want:
+                fail(f"agent-bash-guard {prof}: {cmd!r} exited {r.returncode}, expected {want}")
+        # quote-aware cases and the optional runner allowlist (run against a temp copy so the
+        # allowlist file sits next to the script, as in a scaffolded repo)
+        import shutil, tempfile
+        tmp = tempfile.mkdtemp()
+        try:
+            for hk in ("agent-bash-guard.sh", "agent-bash-guard.py"):
+                shutil.copy(os.path.join(hook_dir, hk), tmp)
+            with open(os.path.join(tmp, "agent-bash-allow.txt"), "w") as fh:
+                fh.write("# test\nnpm test\npytest   # comment\nmake lint\n")
+            for cmd, want in ALLOWLIST_CASES:
+                r = subprocess.run(["sh", os.path.join(tmp, "agent-bash-guard.sh"), "runner"],
+                                   capture_output=True, text=True,
+                                   input=json.dumps({"tool_name": "Bash",
+                                                     "tool_input": {"command": cmd}}))
+                if r.returncode != want:
+                    fail(f"agent-bash-guard runner+allowlist: {cmd!r} exited "
+                         f"{r.returncode}, expected {want}")
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+        for bad in ("", "not json", "{}"):
+            r = subprocess.run(["sh", guard, "review"], capture_output=True, text=True, input=bad)
+            if r.returncode != 2:
+                fail(f"agent-bash-guard must fail closed on input {bad!r} (got {r.returncode})")
+
     print(f"self-check: {n_docs} doc templates, headings {sorted(headings)}, "
           f"packs {sorted(actual_packs)}")
 
@@ -274,7 +376,8 @@ def assert_repo(workdir):
     # --- every [STANDARD] process section the template ships must survive into AGENTS.md
     agents_text = read(agents)
     for heading in ("Task Files", "App-Wide Docs", "Feature Docs", "Skills",
-                    "Creating a Feature", "After Every Task: Keep the Docs Current"):
+                    "Creating a Feature", "After Every Task: Keep the Docs Current",
+                    "Delegation & Token Efficiency"):
         if not re.search(r"^## " + re.escape(heading), agents_text, re.M):
             fail(f"AGENTS.md is missing the standard '{heading}' section "
                  f"(AGENTS.template.md ships it verbatim)")
@@ -331,6 +434,24 @@ def assert_repo(workdir):
         p = os.path.join(workdir, adb)
         if os.path.exists(p) and adb not in spec["adapters_expected"] + created + untouched:
             fail(f"adapter '{adb}' exists but spec expects it not to be created")
+
+    # --- Claude Code sub-agents ship with CLAUDE.md: frontmatter first, markers after it
+    if "CLAUDE.md" in spec["adapters_expected"]:
+        agent_set = ["explorer", "doc-updater", "test-runner", "task-tracker", "committer", "code-reviewer"]
+        for agent in agent_set:
+            p = os.path.join(workdir, ".claude", "agents", f"{agent}.md")
+            if not os.path.exists(p):
+                fail(f".claude/agents/{agent}.md expected (CLAUDE.md created) but missing")
+                continue
+            lines = read(p).splitlines()
+            if not lines or lines[0] != "---" or f"name: {agent}" not in read(p).split("---")[1]:
+                fail(f".claude/agents/{agent}.md: YAML frontmatter must come first with name: {agent}")
+            check_marker_pair(p)
+        for hk in ("agent-bash-guard.sh", "agent-bash-guard.py"):
+            if not os.path.exists(os.path.join(workdir, ".claude", "hooks", hk)):
+                fail(f".claude/hooks/{hk} expected (agents with Bash reference it) but missing")
+        if "Delegation & Token Efficiency" not in read(agents):
+            fail("AGENTS.md: missing Delegation & Token Efficiency section")
 
     # --- pre-existing markerless files must be byte-untouched
     for adb, sha in spec.get("untouched_exact", {}).items():

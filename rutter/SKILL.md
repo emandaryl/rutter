@@ -187,6 +187,44 @@ include. A plain "proceed" means "group 1 plus the pre-ticked ones". This replac
 creating nothing for a fresh project, and also stops a repo with one tool's fingerprint from
 quietly excluding the others the user may also use.
 
+**4. Claude Code sub-agents — created whenever `CLAUDE.md` is created.** Copy each file in
+`templates/claude-agents/` (`<name>.template.md`) to `.claude/agents/<name>.md`: `explorer`,
+`doc-updater`, `test-runner`, `task-tracker`, `committer` and `code-reviewer`. Always create all six, even
+without a `.git` directory: `committer` and `code-reviewer` stop with a message when run outside a
+git repo, so a later `git init` needs no Rutter re-run. They are
+verbatim (no `[FILL: ...]`): the YAML frontmatter comes first, then the body wrapped in
+`<!-- rutter:begin -->` / `<!-- rutter:end -->` (frontmatter must stay the first thing in the file
+or Claude Code will not load the agent). They back the "Delegation & Token Efficiency" section of
+`AGENTS.md`: cheap Haiku agents for search (`explorer`), mechanical doc edits (`doc-updater`), task-status updates in `TASKS.md` after the user's approval (`task-tracker`),
+test/lint/build runs that return only failures (`test-runner`) and commits (`committer`, which
+only commits when the user asked and never pushes), and a Sonnet `code-reviewer` for read-only
+diff review.
+
+Four of the six have the Bash tool (`doc-updater`, `test-runner`, `committer`, `code-reviewer`), and
+each declares a `PreToolUse` hook in its frontmatter that runs
+`.claude/hooks/agent-bash-guard.sh <profile>` (`review`, `commit` or `runner`). Copy
+`templates/claude-hooks/agent-bash-guard.sh` and `agent-bash-guard.py` verbatim to
+`.claude/hooks/` — scripts carry no markers; a copy whose first lines contain `rutter-managed` is
+replaced on re-run, one without is hand-written and left alone (say so in the Final report). The
+guard fails closed (blocks if `python3` or the file is missing), so never create the agents without
+the hook files. Tell the user two limits in the Final report: Claude Code runs frontmatter hooks
+only after the workspace trust dialog is accepted, and not in `-p` (headless) sessions, so there
+the agents' Bash rules fall back to their written instructions only.
+
+Optionally harden `test-runner` from a deny-list into an allowlist: when step 3 found real test,
+lint or build commands (in `TESTING.md`, `SETUP.md`, the manifest's scripts or the Makefile), write
+them, one command prefix per line, to `.claude/hooks/agent-bash-allow.txt` from
+`templates/claude-hooks/agent-bash-allow.template.txt` (keep its `rutter-managed` first line,
+replace the example lines, list only commands you actually found). With the file present the runner
+may run only those prefixes; without it only the deny-list applies. Skip the file when no such
+command was found and say in the Final report which mode is active. On re-run, rewrite it only
+while its first line still says `rutter-managed`; never overwrite the user's additions without
+asking.
+
+Skip an agent file that already exists without markers (step 0 rules), list the set in
+Task 2's proposal, and let the user drop any. Other tools get the same guidance from the
+`AGENTS.md` section alone.
+
 **Do not create `.agent/rules/`.** Antigravity treats that folder as workspace rules; Rutter's
 `.agent/` only holds `docs/`, `features/` and `skills/`, so there is no collision, and keeping it that
 way avoids Antigravity loading Rutter's docs as active rules.
@@ -503,6 +541,10 @@ creation guide, each `.agent/docs/` file):
   alwaysApply: true
   ---
   ```
+- The six Claude Code sub-agents (step 2, group 4) — Task 2, whenever `CLAUDE.md` is written, from
+  `templates/claude-agents/*.template.md` to `.claude/agents/<name>.md`. Verbatim copies; follow
+  the marker rule with the markers placed after the YAML frontmatter. Plus the two Bash-guard
+  files from `templates/claude-hooks/` to `.claude/hooks/` (no markers; see step 2).
 - The three creation guides — `.agent/docs/FEATURE-CREATION.md`, `TASK-CREATION.md` and
   `SKILL-CREATION.md` — Task 2, from `templates/docs/FEATURE-CREATION.template.md`,
   `TASK-CREATION.template.md` and `SKILL-CREATION.template.md`. They are standard text: copy them
@@ -615,6 +657,11 @@ user decide.
   gets added later — including greenfield feature seeding in step 6.
 - `templates/platform-packs/{android,ios,react,flutter,python,go,rust,generic}.md` — per-stack
   checklists of what to look for and how to describe it; not fill-in text.
+- `templates/claude-agents/{explorer,doc-updater,test-runner,task-tracker,committer,code-reviewer}.template.md` — Claude Code sub-agent definitions
+  copied verbatim to `.claude/agents/`.
+- `templates/claude-hooks/agent-bash-guard.{sh,py}` — the PreToolUse Bash guard the four
+  Bash-bearing agents declare; copied verbatim to `.claude/hooks/`. `agent-bash-allow.template.txt`
+  is the optional test-runner allowlist, filled from the commands found.
 - `templates/ADAPTER.template.md` — shared body for all tool adapters; `[FILL: ToolName]`
   substituted per file.
 - `templates/SKILLS_INDEX.template.md` — the `.agent/skills/INDEX.md` scaffold.

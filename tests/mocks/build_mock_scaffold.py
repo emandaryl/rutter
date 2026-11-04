@@ -57,6 +57,17 @@ def build(work):
             "Read `AGENTS.md` at the repo root before doing anything else — it is the source\n"
             "of truth for this project. This file is intentionally just a pointer."))
 
+    # Claude Code sub-agents: verbatim templates (frontmatter, then marker-wrapped body)
+    for agent in ("explorer", "doc-updater", "test-runner", "task-tracker", "committer", "code-reviewer"):
+        tpl = open(os.path.join(ROOT, "rutter", "templates", "claude-agents",
+                                f"{agent}.template.md")).read()
+        write(os.path.join(work, ".claude", "agents", f"{agent}.md"), tpl)
+
+    os.makedirs(os.path.join(work, ".claude", "hooks"), exist_ok=True)
+    for hk in ("agent-bash-guard.sh", "agent-bash-guard.py"):
+        shutil.copy(os.path.join(ROOT, "rutter", "templates", "claude-hooks", hk),
+                    os.path.join(work, ".claude", "hooks", hk))
+
     # AGENTS.md — markers first and last; only links that will exist
     write(os.path.join(work, "AGENTS.md"), wrap("\n".join([
         "# AGENTS.md — Brew log",
@@ -102,6 +113,10 @@ def build(work):
         "|---|---|",
         "| A new feature | `.agent/docs/FEATURE-CREATION.md` |",
         "| A TASKS.md | `.agent/docs/TASK-CREATION.md` |",
+        "",
+        "## Delegation & Token Efficiency [STANDARD]",
+        "",
+        "Hand broad searches to the `explorer` agent and post-task doc updates to `doc-updater`.",
         "",
         "## After Every Task: Keep the Docs Current [STANDARD]",
         "",

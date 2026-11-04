@@ -261,6 +261,24 @@ If no feature doc exists for the area you're working on, check `.agent/docs/` fo
 
 ---
 
+## Delegation & Token Efficiency [STANDARD]
+
+Keep the main session's context small. Delegate work whose output is large but whose answer is small:
+
+- **Broad search** ("where is X", "what touches Y", sweeps across many files) → hand to a sub-agent and ask for a short answer with `path:line` references, not file contents. Claude Code projects have an `explorer` agent in `.claude/agents/` for this.
+- **Noisy output** (full test runs, build logs, migrations, any command with long output) → give it to the `test-runner` agent, which runs a documented command and returns only the failures and the fix-relevant lines.
+- **Post-task doc updates** → hand the mechanical "After Every Task" edits (file lists, commands, endpoints) to the `doc-updater` agent with a one-paragraph summary of the change. You still write Known Gotchas, Architecture changes and `DECISIONS.md` entries yourself; the agent only flags them.
+- **Commits and review** → `committer` creates a commit only when the user asked for one and never pushes; `code-reviewer` reviews the diff read-only before you commit or open a PR.
+- **Task status** → after the user approves a task, hand the `[x]` / `[~]` / `[!]` update and its note to the `task-tracker` agent (it refuses `[x]` without the approval quoted). You still decide whether a task is done.
+- **Push, PRs and debugging stay with you.** Push or open a PR only when the user asks, from the main session. Root-cause debugging needs the context you hold: use `explorer` to locate code and `test-runner` to reproduce, then reason inline.
+- **Do it yourself** when the target file is already known, the edit is small, or the task needs the context you already hold. Delegating a two-file change costs more than it saves.
+
+The agent names above are Claude Code agents in `.claude/agents/`; those with Bash are restricted by a guard hook in `.claude/hooks/` (git-only for review, no pushes, no destructive commands), which applies once the workspace is trusted and not in headless `-p` runs. In another tool, use its own sub-agent or delegation feature for the same jobs, or do them inline while keeping outputs short.
+
+When delegating, state the exact question and the output you want (length, format). Read targeted line ranges instead of whole files, and do not paste large outputs back into the conversation.
+
+---
+
 ## Creating a Feature / Reference / Task / Skill [STANDARD]
 
 <!-- Delete this comment when done. If step 3a found an existing owner of a format, replace that row's `.agent/docs/<GUIDE>.md` path (here and in the pointer lines above) with the owner's real path; see SKILL.md step 6. -->
