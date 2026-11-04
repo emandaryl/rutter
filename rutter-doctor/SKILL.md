@@ -345,7 +345,7 @@ lacks them, and one may have been deleted. Always `⚠ Warn` at worst, never `�
    | File | Expected SHA-256 (first 12 hex) |
    |---|---|
    | `agent-bash-guard.sh` | c7fe5853850c |
-   | `agent-bash-guard.py` | b8c809e5c0ec |
+   | `agent-bash-guard.py` | e983fdf91902 |
 
    A mismatch means the copy was hand-edited or comes from a different Rutter version, so its
    protections may be weaker than documented: `⚠ Warn` and advise "re-run Rutter to refresh it, or

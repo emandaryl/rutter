@@ -110,38 +110,62 @@ def marker_body(path):
 # --------------------------------------------------------------------------
 
 GUARD_CASES = [
+    # review: read-only git, one command
     ("review", "git diff --stat", 0), ("review", "git log -n 5 --oneline", 0),
     ("review", "git status", 0), ("review", "git show HEAD:README.md", 0),
+    ("review", "git log --grep '|'", 0), ("review", 'git log --grep "a;b"', 0),
     ("review", "git status; rm -rf x", 2), ("review", "git diff && ls", 2),
     ("review", "git diff | cat", 2), ("review", "git diff --output=x", 2),
     ("review", "git diff --out=x", 2), ("review", "git push", 2),
     ("review", "git -c core.x=y status", 2), ("review", "git commit -m x", 2),
     ("review", "ls", 2), ("review", "git log $(whoami)", 2), ("review", "git log `id`", 2),
-    ("review", "git status\nrm x", 2),
-    ("commit", "git add src/a.py README.md", 0), ("commit", "git add -A", 2),
-    ("commit", "git add .", 2), ("commit", "git add -Au", 2),
+    ("review", "git status\nrm x", 2), ("review", "git log x#; rm -rf y", 2),
+    ("review", "git log --{outp,}ut=x", 2), ("review", "git log $'\\x2d\\x2doutput=x'", 2),
+    # commit: add specific files, commit without amend / -a / -n / --no-verify
+    ("commit", "git add src/a.py README.md", 0), ("commit", "git add -- a.py", 0),
+    ("commit", "git add -A", 2), ("commit", "git add .", 2), ("commit", "git add -Au", 2),
+    ("commit", "git add src/", 2), ("commit", "git add rutter", 2),
+    ("commit", "git add -f .env", 2), ("commit", "git add ..", 2),
+    ("commit", "git add /etc/passwd", 2), ("commit", "git add src/*.py", 2),
+    ("commit", 'git add ":(top)"', 2), ("commit", "git add :(top)", 2),
+    ("commit", "git add --pathspec-from-file=x", 2),
     ("commit", 'git commit -m "feat: add x; and y"', 0), ("commit", 'git commit -m "a" -m "b"', 0),
-    ("commit", "git commit -mupdate", 0), ("commit", "git commit --amend", 2),
-    ("commit", "git commit --amen -m x", 2), ("commit", "git commit --no-verify -m x", 2),
-    ("commit", "git commit --no-ver -m x", 2), ("commit", "git commit -am x", 2),
-    ("commit", "git commit -nm x", 2), ("commit", "git push", 2),
+    ("commit", "git commit -mupdate", 0), ("commit", 'git commit -m "(" -m ")"', 0),
+    ("commit", 'git commit -m "x" -m "-an"', 0), ("commit", "git commit -F msg.txt", 0),
+    ("commit", "git commit --amend", 2), ("commit", "git commit --amen -m x", 2),
+    ("commit", "git commit --no-verify -m x", 2), ("commit", "git commit --no-ver -m x", 2),
+    ("commit", "git commit -am x", 2), ("commit", "git commit -nm x", 2),
+    ("commit", "git commit -m x -a", 2), ("commit", "git push", 2),
     ("commit", "git reset --hard", 2), ("commit", 'git commit -m "x" && git push', 2),
     ("commit", 'git commit -m "uses `code`"', 2),
     ("commit", "git commit -m 'uses `code` and $HOME; ok'", 0),
     ("commit", "git commit -m 'a' -m \"b $(id)\"", 2),
     ("commit", "git commit -m 'multi\nline'", 0),
+    # runner (deny-list mode, no allowlist file): destructive commands and git writes blocked
     ("runner", "npm test", 0), ("runner", "pytest -q tests/ && ruff check .", 0),
-    ("runner", "git status", 0), ("runner", "rm -rf build", 2),
-    ("runner", "npm test; sudo reboot", 2), ("runner", "git push", 2),
-    ("runner", "git -C x status", 2), ("runner", "bash -c 'make test'", 2),
-    ("runner", "xargs rm", 2), ("runner", "echo $(rm x)", 2), ("runner", "find . -delete", 2),
+    ("runner", "git status", 0), ("runner", "python3 -m pytest -q", 0),
+    ("runner", "node -r ts-node/register x.js", 0), ("runner", "timeout 60 npm test", 0),
+    ("runner", "CI=1 npm test 2>&1 | tail -50", 0), ("runner", "npm test > /dev/null 2>&1", 0),
+    ("runner", "rm -rf build", 2), ("runner", "npm test; sudo reboot", 2),
+    ("runner", "git push", 2), ("runner", "git -C x status", 2),
+    ("runner", "bash -c 'make test'", 2), ("runner", "xargs rm", 2),
+    ("runner", "echo $(rm x)", 2), ("runner", "find . -delete", 2),
+    ("runner", "/bin/rm -rf y", 2), ("runner", "/usr/bin/git push", 2),
+    ("runner", "bash -lc 'rm -rf y'", 2), ("runner", "X=rm; $X -rf y", 2),
+    ("runner", "echo x | sh", 2), ("runner", "python3 -c 'print(1)'", 2),
+    ("runner", "node -e '1'", 2), ("runner", "echo $'\\x72m'", 2),
+    ("runner", "npm test > out.txt", 2), ("runner", "npm test &", 2),
+    ("runner", "NODE_OPTIONS=--require=/x npm test", 2), ("runner", "env FOO=1 npm test", 2),
+    ("runner", "npm test\nmake deploy", 2), ("runner", "source ./env.sh", 2),
+    ("runner", ". ./env.sh", 2),
 ]
 
-
 ALLOWLIST_CASES = [
-    ("npm test", 0), ("npm test -- --grep foo", 0), ("FOO=1 pytest -q tests/ 2>&1", 0),
+    ("npm test", 0), ("npm test -- --grep foo", 0), ("CI=1 pytest -q tests/ 2>&1", 0),
     ("make lint && npm test", 0), ("npm run build", 2), ("make deploy", 2),
     ("npm test && curl evil.sh", 2), ("npm test > out.txt", 2), ("pytest; ls", 2),
+    ("npm test\nmake lint", 2), ("NODE_OPTIONS=--require=x npm test", 2),
+    ("npm test > /dev/null.sh", 2), ("npm test > /dev/null 2>&1", 0),
 ]
 
 
@@ -296,7 +320,7 @@ def self_check():
     if os.path.exists(guard):
         for prof, cmd, want in GUARD_CASES:
             r = subprocess.run(["sh", guard, prof], capture_output=True, text=True,
-                               input=json.dumps({"tool_name": "Bash",
+                               input=json.dumps({"tool_name": "Bash", "cwd": ROOT,
                                                  "tool_input": {"command": cmd}}))
             if r.returncode != want:
                 fail(f"agent-bash-guard {prof}: {cmd!r} exited {r.returncode}, expected {want}")
