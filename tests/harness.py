@@ -158,6 +158,36 @@ GUARD_CASES = [
     ("runner", "NODE_OPTIONS=--require=/x npm test", 2), ("runner", "env FOO=1 npm test", 2),
     ("runner", "npm test\nmake deploy", 2), ("runner", "source ./env.sh", 2),
     ("runner", ". ./env.sh", 2),
+    # deny-list bypasses found in review: wrappers, find -exec, writers, long inline flags
+    ("runner", 'find . -exec sh -c "rm -rf x" \\;', 2), ("runner", "find . -exec mv {} /tmp \\;", 2),
+    ("runner", 'time bash -c "rm -rf x"', 2), ("runner", 'nice sh -c "rm x"', 2),
+    ("runner", "npx sh -c 'rm x'", 2), ("runner", "bash script.sh", 2),
+    ("runner", 'node --eval "1"', 2), ("runner", "node --print 1", 2),
+    ("runner", "npx node -e 1", 2), ("runner", "sed -i s/a/b/ f", 2),
+    ("runner", "sed -n 1,5p f", 0), ("runner", "cat f | tee g", 2), ("runner", "cp a b", 2),
+    ("runner", "mv a b", 2), ("runner", "awk 'BEGIN{system(\"id\")}'", 2),
+    ("runner", "git diff", 0),
+    # ordinary commands that must not be blocked (false positives found in review)
+    ("runner", "npm install", 0), ("runner", "pip install -e .", 0), ("runner", "cargo install --path .", 0),
+    ("runner", "docker compose exec app pytest", 0), ("runner", "bundle exec rspec", 0),
+    ("runner", "PYTHONPATH=src pytest", 0), ("runner", "DEBUG=1 npm test", 0),
+    ("runner", "DATABASE_URL=sqlite:// RUST_BACKTRACE=1 cargo test", 0),
+    ("runner", "python3 -m pytest -c pytest.ini", 0), ("runner", "node server.js -e production", 0),
+    ("runner", "install -m 755 a b", 2), ("runner", "exec rm x", 2), ("runner", "npm_config_script_shell=sh npm test", 2),
+    ("runner", "LD_PRELOAD=/x.so npm test", 2), ("runner", "MAVEN_OPTS=-javaagent:x mvn test", 2),
+    ("runner", "python3 -W error -c 'import os'", 2), ("runner", "node -r x -e 1", 2),
+    ("runner", "BASH_ENV=/x npm test", 2), ("runner", "GIT_SSH_COMMAND=x npm test", 2),
+    # review/commit additions: interactive add, secrets, external diff, template/author
+    ("review", "git diff --ext-diff", 2),
+    ("commit", "git add -p", 2), ("commit", "git add -e", 2), ("commit", "git add --patch", 2),
+    ("commit", "git add .env", 2), ("commit", "git add config/.env.local", 2),
+    ("commit", "git add id_rsa", 2), ("commit", "git add certs/server.pem", 2),
+    ("commit", "git add src/environment.py", 0),
+    ("commit", "git commit -m x --template=/etc/passwd", 2), ("commit", "git commit -t x", 2),
+    ("commit", "git commit -m x --author='a <a@b>'", 2),
+    ("commit", "git commit -F /etc/passwd", 2), ("commit", "git commit -F ../x", 2),
+    ("commit", "git commit --file=/etc/passwd", 2), ("commit", "git commit -F msg.txt", 0),
+    ("commit", "git commit -m x --allow-empty", 0),
 ]
 
 ALLOWLIST_CASES = [
@@ -302,6 +332,34 @@ def self_check():
             fail(f"claude-agents/{fn}: unknown guard profile '{hook.group(1)}'")
         if not has_bash and hook:
             fail(f"claude-agents/{fn}: has a Bash guard hook but no Bash tool")
+    # Codex agent templates: valid TOML with the required keys, name matches file, marker pair
+    cdir = os.path.join(TEMPLATES, "codex-agents")
+    names = {"repo_explorer", "test_runner", "doc_updater"}
+    have = {f.split(".")[0] for f in os.listdir(cdir)} if os.path.isdir(cdir) else set()
+    if have != names:
+        fail(f"codex-agents templates {sorted(have)} != expected {sorted(names)}")
+    for n in sorted(have & names):
+        txt = read(os.path.join(cdir, f"{n}.template.toml"))
+        lines = txt.splitlines()
+        if "# rutter:begin" not in lines or "# rutter:end" not in lines \
+                or lines.index("# rutter:begin") > lines.index("# rutter:end"):
+            fail(f"codex-agents/{n}: missing or misordered # rutter:begin / # rutter:end")
+        try:
+            import tomllib
+            d = tomllib.loads(txt)
+        except ImportError:
+            continue
+        except Exception as exc:
+            fail(f"codex-agents/{n}: invalid TOML ({exc})")
+            continue
+        for key in ("name", "description", "developer_instructions"):
+            if not isinstance(d.get(key), str) or not d[key].strip():
+                fail(f"codex-agents/{n}: missing required key {key}")
+        if d.get("name") != n:
+            fail(f"codex-agents/{n}: name is {d.get('name')!r}, expected {n!r}")
+        for forbidden in ("sandbox_mode", "approval_policy", "mcp_servers", "hooks", "model"):
+            if forbidden in d:
+                fail(f"codex-agents/{n}: sets {forbidden}, which the template must leave to the user")
     # Doctor's recorded guard hashes must match the shipped files (Check 10 step 5)
     doctor_text = read(os.path.join(ROOT, "rutter-doctor", "SKILL.md"))
     for name in ("agent-bash-guard.sh", "agent-bash-guard.py"):
@@ -476,6 +534,33 @@ def assert_repo(workdir):
                 fail(f".claude/hooks/{hk} expected (agents with Bash reference it) but missing")
         if "Delegation & Token Efficiency" not in read(agents):
             fail("AGENTS.md: missing Delegation & Token Efficiency section")
+
+    # --- Codex sub-agents are optional; any present must be well-formed, marker-wrapped TOML
+    codex_dir = os.path.join(workdir, ".codex", "agents")
+    if os.path.isdir(codex_dir):
+        for fn in sorted(os.listdir(codex_dir)):
+            if not fn.endswith(".toml"):
+                continue
+            txt = read(os.path.join(codex_dir, fn))
+            if "# rutter:begin" not in txt and "# rutter:end" not in txt:
+                continue  # hand-written, left alone
+            lines = txt.splitlines()
+            if "# rutter:begin" not in lines or "# rutter:end" not in lines \
+                    or lines.index("# rutter:begin") > lines.index("# rutter:end"):
+                fail(f".codex/agents/{fn}: broken # rutter:begin / # rutter:end pair")
+            try:
+                import tomllib
+                d = tomllib.loads(txt)
+            except ImportError:
+                continue
+            except Exception as exc:
+                fail(f".codex/agents/{fn}: invalid TOML ({exc})")
+                continue
+            if d.get("name") != fn[:-5]:
+                fail(f".codex/agents/{fn}: name {d.get('name')!r} must equal the file name")
+            for key in ("description", "developer_instructions"):
+                if not d.get(key):
+                    fail(f".codex/agents/{fn}: missing {key}")
 
     # --- pre-existing markerless files must be byte-untouched
     for adb, sha in spec.get("untouched_exact", {}).items():

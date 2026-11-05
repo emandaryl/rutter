@@ -54,6 +54,8 @@ file preserves intact markers.
   - `.clinerules`
   - `.aider.conventions.md`
 - All files in `.agent/docs/*.md`
+- `.codex/agents/*.toml` (`repo_explorer`, `test_runner`, `doc_updater`), if present (markers are
+  `# rutter:begin` / `# rutter:end` comment lines, not HTML comments)
 - `.claude/agents/*.md` (`explorer`, `doc-updater`, `test-runner`, `task-tracker`, `committer`, `code-reviewer`), if present (markers sit after the
   YAML frontmatter, so the begin marker need not be line 1 here)
 
@@ -345,7 +347,7 @@ lacks them, and one may have been deleted. Always `⚠ Warn` at worst, never `�
    | File | Expected SHA-256 (first 12 hex) |
    |---|---|
    | `agent-bash-guard.sh` | c7fe5853850c |
-   | `agent-bash-guard.py` | e983fdf91902 |
+   | `agent-bash-guard.py` | 9bbda55e6501 |
 
    A mismatch means the copy was hand-edited or comes from a different Rutter version, so its
    protections may be weaker than documented: `⚠ Warn` and advise "re-run Rutter to refresh it, or
@@ -355,7 +357,13 @@ lacks them, and one may have been deleted. Always `⚠ Warn` at worst, never `�
    (an empty allowlist blocks every `test-runner` command) and that each listed prefix still
    appears in `TESTING.md`, `SETUP.md`, the manifest scripts or the Makefile; a prefix that no
    longer exists is stale, report it.
-7. Report `✓ Pass` if all six are present and every check above held. Otherwise `⚠ Warn` naming each missing or malformed
+7. **Codex agents (opt-in).** If `.codex/agents/` exists, check each of `repo_explorer.toml`,
+   `test_runner.toml` and `doc_updater.toml` that is present: it has `name` equal to the file's
+   basename, a `description` and `developer_instructions`, and an intact `# rutter:begin` /
+   `# rutter:end` pair (unless it has no markers, which means hand-written: leave it). A missing
+   Codex file is never a warning, because they are optional. A file with a broken pair or missing
+   required key is a `⚠ Warn`.
+8. Report `✓ Pass` if all six are present and every check above held. Otherwise `⚠ Warn` naming each missing or malformed
    file or hook and advise: "scaffolded by an older Rutter, or deleted; re-run Rutter to add it". A user
    who deliberately dropped one at Task 2 may ignore the warning.
 

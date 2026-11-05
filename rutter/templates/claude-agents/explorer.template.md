@@ -1,6 +1,6 @@
 ---
 name: explorer
-description: Read-only codebase search. Use proactively for broad lookups (where is X defined, which files touch Y, how does Z flow) so the main session does not read many files itself. Returns a short summary with file:line references, never file dumps.
+description: Read-only search across many files (where is X, what touches Y). Returns a short answer with path:line refs, no file dumps.
 tools: Read, Grep, Glob
 model: haiku
 ---

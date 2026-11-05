@@ -152,40 +152,6 @@ to actively look for, each only if there's real evidence:
 
 ---
 
-## Task Files — Feature-Specific Work Tracking [STANDARD]
-
-### TASKS.md Format
-
-**Before creating or restructuring any `TASKS.md`, read `.agent/docs/TASK-CREATION.md` and follow its format exactly — do not write one from memory.**
-
-**Managed content.** Anything between the rutter begin and end marker comments in `AGENTS.md`, the adapters and `.agent/docs/` files is managed: a task-completing agent may update it directly (the doc-currency rule in every `TASKS.md`). Anything outside the markers is a human's own notes — never touch it.
-
-Each feature has its own task file at `.agent/features/<feature-name>/TASKS.md`. New rows are added
-to the table below as features are created — see "Creating a Feature / Reference / Task" at the
-bottom of this file.
-
-| Feature | Task file |
-|---|---|
-<!-- [FILL: one row per feature that already exists in the repo, if any were found — otherwise
-leave the table with just the header, ready for the first feature. Do not invent features. -->
-
-**To work on a feature:** load `AGENTS.md` + the feature's `FEATURE.md` + its `TASKS.md`.
-**To run features in parallel:** give each session its own git branch or worktree — never run two
-feature sessions directly against the same uncommitted working tree. Task files are scoped so
-sessions shouldn't need to touch the same *code*, but the doc-currency rule in each `TASKS.md` (keeping
-`AGENTS.md`/`.agent/docs/` updated as tasks complete) means two sessions genuinely can end up
-editing the same shared file. With separate branches, that's safe: it surfaces as a normal git
-merge, auto-resolved if the edits don't overlap, a visible conflict for a human to resolve if they
-do. Without separate branches, it's not a conflict at all — it's a silent overwrite. Whichever
-session writes `AGENTS.md` second wins, and the first session's update just vanishes with no
-warning. Keep code isolation too, on top of branch isolation: a feature's tasks should only
-create/edit files inside its own package/module. Don't write a task that extracts a shared helper
-out of another feature's existing files, even for obviously-duplicated boilerplate — see "Shared
-abstractions vs. duplication" above. Branch isolation protects shared docs; package isolation
-protects code — a parallel run needs both.
-
----
-
 ## App-Wide Docs [STANDARD — table rows are conditional on what was actually created]
 
 Engineering reference docs for the whole project. Read these when you need deeper context beyond
@@ -253,6 +219,40 @@ If no feature doc exists for the area you're working on, check `.agent/docs/` fo
 
 ---
 
+## Task Files — Feature-Specific Work Tracking [STANDARD]
+
+### TASKS.md Format
+
+**Before creating or restructuring any `TASKS.md`, read `.agent/docs/TASK-CREATION.md` and follow its format exactly — do not write one from memory.**
+
+**Managed content.** Anything between the rutter begin and end marker comments in `AGENTS.md`, the adapters and `.agent/docs/` files is managed: a task-completing agent may update it directly (the doc-currency rule in every `TASKS.md`). Anything outside the markers is a human's own notes — never touch it.
+
+Each feature has its own task file at `.agent/features/<feature-name>/TASKS.md`. New rows are added
+to the table below as features are created — see "Creating a Feature / Reference / Task" at the
+bottom of this file.
+
+| Feature | Task file |
+|---|---|
+<!-- [FILL: one row per feature that already exists in the repo, if any were found — otherwise
+leave the table with just the header, ready for the first feature. Do not invent features. -->
+
+**To work on a feature:** load `AGENTS.md` + the feature's `FEATURE.md` + its `TASKS.md`.
+**To run features in parallel:** give each session its own git branch or worktree — never run two
+feature sessions directly against the same uncommitted working tree. Task files are scoped so
+sessions shouldn't need to touch the same *code*, but the doc-currency rule in each `TASKS.md` (keeping
+`AGENTS.md`/`.agent/docs/` updated as tasks complete) means two sessions genuinely can end up
+editing the same shared file. With separate branches, that's safe: it surfaces as a normal git
+merge, auto-resolved if the edits don't overlap, a visible conflict for a human to resolve if they
+do. Without separate branches, it's not a conflict at all — it's a silent overwrite. Whichever
+session writes `AGENTS.md` second wins, and the first session's update just vanishes with no
+warning. Keep code isolation too, on top of branch isolation: a feature's tasks should only
+create/edit files inside its own package/module. Don't write a task that extracts a shared helper
+out of another feature's existing files, even for obviously-duplicated boilerplate — see "Shared
+abstractions vs. duplication" above. Branch isolation protects shared docs; package isolation
+protects code — a parallel run needs both.
+
+---
+
 ## Skills — Tool-Agnostic Reusable Procedures [STANDARD]
 
 `.agent/skills/` holds reusable multi-step procedures any tool can follow, in tool-agnostic language. Before starting a task that looks like a known recurring procedure, check `.agent/skills/INDEX.md` — a one-line-per-skill lookup. A row may point at a skill living outside `.agent/skills/` (e.g. `.claude/skills/<name>/SKILL.md`); the index is the single lookup table either way.
@@ -263,17 +263,23 @@ If no feature doc exists for the area you're working on, check `.agent/docs/` fo
 
 ## Delegation & Token Efficiency [STANDARD]
 
-Keep the main session's context small. Delegate work whose output is large but whose answer is small:
+Keep the main session's context small and the bill low. Delegate only when the input is large and the answer is small (many files to search, a long log to read); each delegation has a fixed cost (the agent starts cold and re-reads this file), so a small job is cheaper inline. Use a cheap model for the delegated job where the tool allows it.
 
-- **Broad search** ("where is X", "what touches Y", sweeps across many files) → hand to a sub-agent and ask for a short answer with `path:line` references, not file contents. Claude Code projects have an `explorer` agent in `.claude/agents/` for this.
-- **Noisy output** (full test runs, build logs, migrations, any command with long output) → give it to the `test-runner` agent, which runs a documented command and returns only the failures and the fix-relevant lines.
-- **Post-task doc updates** → hand the mechanical "After Every Task" edits (file lists, commands, endpoints) to the `doc-updater` agent with a one-paragraph summary of the change. You still write Known Gotchas, Architecture changes and `DECISIONS.md` entries yourself; the agent only flags them.
-- **Commits and review** → `committer` creates a commit only when the user asked for one and never pushes; `code-reviewer` reviews the diff read-only before you commit or open a PR.
-- **Task status** → after the user approves a task, hand the `[x]` / `[~]` / `[!]` update and its note to the `task-tracker` agent (it refuses `[x]` without the approval quoted). You still decide whether a task is done.
-- **Push, PRs and debugging stay with you.** Push or open a PR only when the user asks, from the main session. Root-cause debugging needs the context you hold: use `explorer` to locate code and `test-runner` to reproduce, then reason inline.
-- **Do it yourself** when the target file is already known, the edit is small, or the task needs the context you already hold. Delegating a two-file change costs more than it saves.
+- **Broad search** ("where is X", "what touches Y", sweeps across many files) → a *search* agent; ask for a short answer with `path:line` references, not file contents.
+- **Noisy output** (full test runs, build logs, migrations, any long output) → a *test runner* agent, which runs a documented command and returns only the failures and the fix-relevant lines.
+- **Post-task doc updates** → after a change touching several files, a *doc updater* agent applies the mechanical "After Every Task" edits (file lists, commands, endpoints) from a one-paragraph summary of the change. For a one- or two-file change, edit the docs inline. You still write Known Gotchas, Architecture changes and `DECISIONS.md` entries yourself; the agent only flags them.
+- **Commits, review and task status** (Claude Code only) → a *committer* commits only when the user asked and never pushes; a *code reviewer* reviews the diff read-only, before a PR or when asked, not after every edit; a *task tracker* records `[x]` / `[~]` / `[!]` in `TASKS.md` after the user approves (it refuses `[x]` without the approval quoted). You still decide whether a task is done.
+- **Push, PRs and debugging stay with you.** Push or open a PR only when the user asks, from the main session. Root-cause debugging needs the context you hold: use the search agent to locate code and the test runner to reproduce, then reason inline.
+- **Do it yourself** when the target file is already known, the edit is small, the output will be short anyway, or the task needs the context you already hold.
 
-The agent names above are Claude Code agents in `.claude/agents/`; those with Bash are restricted by a guard hook in `.claude/hooks/` (git-only for review, no pushes, no destructive commands), which applies once the workspace is trusted and not in headless `-p` runs. In another tool, use its own sub-agent or delegation feature for the same jobs, or do them inline while keeping outputs short.
+| Job | Claude Code (`.claude/agents/`) | Codex (`.codex/agents/`) |
+|---|---|---|
+| Search | `explorer` | `repo_explorer` |
+| Test runner | `test-runner` | `test_runner` |
+| Doc updater | `doc-updater` | `doc_updater` |
+| Commit / review / task status | `committer`, `code-reviewer`, `task-tracker` | none |
+
+Claude Code agents with Bash run behind a guard hook in `.claude/hooks/`, a safety net and not a sandbox. If it blocks a command, rerun it as one plain command or do that step yourself. Codex agents have no guard, only their instructions; they inherit the session model unless `default_subagent_model` is set under `[agents]` in `config.toml`, and Codex spawns them only when asked, so ask by name. In any other tool, use its own sub-agent feature for the same jobs, or work inline with short outputs.
 
 When delegating, state the exact question and the output you want (length, format). Read targeted line ranges instead of whole files, and do not paste large outputs back into the conversation.
 

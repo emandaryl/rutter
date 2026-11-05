@@ -63,6 +63,12 @@ def build(work):
                                 f"{agent}.template.md")).read()
         write(os.path.join(work, ".claude", "agents", f"{agent}.md"), tpl)
 
+    # Codex sub-agents (optional group): verbatim TOML templates
+    for agent in ("repo_explorer", "test_runner", "doc_updater"):
+        tpl = open(os.path.join(ROOT, "rutter", "templates", "codex-agents",
+                                f"{agent}.template.toml")).read()
+        write(os.path.join(work, ".codex", "agents", f"{agent}.toml"), tpl)
+
     os.makedirs(os.path.join(work, ".claude", "hooks"), exist_ok=True)
     for hk in ("agent-bash-guard.sh", "agent-bash-guard.py"):
         shutil.copy(os.path.join(ROOT, "rutter", "templates", "claude-hooks", hk),

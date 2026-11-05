@@ -209,7 +209,11 @@ replaced on re-run, one without is hand-written and left alone (say so in the Fi
 guard fails closed (blocks if `python3` or the file is missing), so never create the agents without
 the hook files. Tell the user two limits in the Final report: Claude Code runs frontmatter hooks
 only after the workspace trust dialog is accepted, and not in `-p` (headless) sessions, so there
-the agents' Bash rules fall back to their written instructions only.
+the agents' Bash rules fall back to their written instructions only. Also tell them the guard
+needs `sh` and `python3` on the machine (on Windows without them the hook cannot run and the
+rules fall back to the instructions), and that sub-agent Bash calls can still show the user
+permission prompts: they may allow-list read-only commands such as `Bash(git diff:*)` in their own
+settings; Rutter never edits their settings.
 
 Optionally harden `test-runner` from a deny-list into an allowlist: when step 3 found real test,
 lint or build commands (in `TESTING.md`, `SETUP.md`, the manifest's scripts or the Makefile), write
@@ -217,13 +221,28 @@ them, one command prefix per line, to `.claude/hooks/agent-bash-allow.txt` from
 `templates/claude-hooks/agent-bash-allow.template.txt` (keep its `rutter-managed` first line,
 replace the example lines, list only commands you actually found). With the file present the runner
 may run only those prefixes; without it only the deny-list applies. Skip the file when no such
-command was found and say in the Final report which mode is active. On re-run, rewrite it only
+command was found and say in the Final report which mode is active (deny-list mode is a safety
+net against mistakes, not a sandbox: say so, and recommend the allowlist). On re-run, rewrite it only
 while its first line still says `rutter-managed`; never overwrite the user's additions without
 asking.
 
 Skip an agent file that already exists without markers (step 0 rules), list the set in
 Task 2's proposal, and let the user drop any. Other tools get the same guidance from the
 `AGENTS.md` section alone.
+
+**5. Codex sub-agents — optional, pre-ticked when `.codex/` exists.** Codex creates no adapter
+file, so list this as its own checklist item in Task 2. When chosen, copy
+`templates/codex-agents/<name>.template.toml` to `.codex/agents/<name>.toml` for `repo_explorer`,
+`test_runner` and `doc_updater` (the cheap, high-payoff jobs; there is no committer, task-tracker or
+reviewer for Codex). Verbatim copies wrapped in `# rutter:begin` / `# rutter:end` comment lines
+(TOML has no HTML comments); step 0 marker rules apply, and a markerless existing file is left
+alone. Tell the user in the Final report: (a) Codex custom agents cannot declare their own hooks or
+sandbox, so the Claude Bash guard is not shipped and these agents are limited by their
+instructions only; (b) the files set no `model`, so they inherit the session model — set
+`default_subagent_model` under `[agents]` in `config.toml` to a cheap one, which is where the
+saving comes from; (c) Codex only spawns sub-agents when asked, and `AGENTS.md` asks for them by
+name. Verify the TOML field names against Codex's current sub-agent docs if a run reports that an
+agent failed to load.
 
 **Do not create `.agent/rules/`.** Antigravity treats that folder as workspace rules; Rutter's
 `.agent/` only holds `docs/`, `features/` and `skills/`, so there is no collision, and keeping it that
@@ -545,6 +564,9 @@ creation guide, each `.agent/docs/` file):
   `templates/claude-agents/*.template.md` to `.claude/agents/<name>.md`. Verbatim copies; follow
   the marker rule with the markers placed after the YAML frontmatter. Plus the two Bash-guard
   files from `templates/claude-hooks/` to `.claude/hooks/` (no markers; see step 2).
+- The three Codex sub-agents (step 2, group 5) — Task 2, only when chosen, from
+  `templates/codex-agents/*.template.toml` to `.codex/agents/<name>.toml`. Verbatim; markers are
+  `# rutter:begin` / `# rutter:end` comment lines.
 - The three creation guides — `.agent/docs/FEATURE-CREATION.md`, `TASK-CREATION.md` and
   `SKILL-CREATION.md` — Task 2, from `templates/docs/FEATURE-CREATION.template.md`,
   `TASK-CREATION.template.md` and `SKILL-CREATION.template.md`. They are standard text: copy them
@@ -659,6 +681,8 @@ user decide.
   checklists of what to look for and how to describe it; not fill-in text.
 - `templates/claude-agents/{explorer,doc-updater,test-runner,task-tracker,committer,code-reviewer}.template.md` — Claude Code sub-agent definitions
   copied verbatim to `.claude/agents/`.
+- `templates/codex-agents/{repo_explorer,test_runner,doc_updater}.template.toml` — Codex custom
+  agent definitions copied verbatim to `.codex/agents/` when chosen.
 - `templates/claude-hooks/agent-bash-guard.{sh,py}` — the PreToolUse Bash guard the four
   Bash-bearing agents declare; copied verbatim to `.claude/hooks/`. `agent-bash-allow.template.txt`
   is the optional test-runner allowlist, filled from the commands found.

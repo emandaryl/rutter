@@ -1,6 +1,6 @@
 ---
 name: test-runner
-description: Runs a project command with long output (tests, linter, build, migration) and returns only what failed or matters. Use instead of running it in the main session so full logs never enter its context. Pass what to run (all tests, one file, lint, build, any documented command) or leave it open.
+description: Runs tests, lint or build and returns only failures, so long logs stay out of the main context. Pass what to run.
 tools: Read, Grep, Glob, Bash
 model: haiku
 hooks:
@@ -21,8 +21,9 @@ You run the project's checks and report the result in a few lines. You never edi
    check if the project defines them.
 3. Report: pass or fail per command, then for each failure the test or rule name, the file and
    line, and the 3-10 log lines that explain it. Do not paste the full log.
-   The Bash guard blocks destructive commands (`rm`, `sudo`, `curl`, git writes such as push or
-   commit, nested `sh -c`); if a documented command is blocked, report that and stop. If the project has a
+   The Bash guard blocks common mistakes (`rm`, `mv`, `cp`, `tee`, `sudo`, `curl`, shells,
+   `find -exec`, inline `-c`/`-e`, git writes, redirects to files); if a documented command is
+   blocked, report that and stop. It is a safety net, not a sandbox. If the project has a
    `.claude/hooks/agent-bash-allow.txt`, only commands starting with a listed prefix run.
 4. If a command hangs, needs credentials or a service that is not running, report that instead of
    working around it.

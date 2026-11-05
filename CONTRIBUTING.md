@@ -33,6 +33,7 @@ it at its source. Never copy one out "for convenience," even into this file.
 | A nested `.agent/skills/<name>/SKILL.md` format (a *generated-repo's* skill file — not this project's own `SKILL.md`) | `rutter/templates/docs/SKILL-CREATION.template.md` (also holds the no-script fallback rule) |
 | Each `.agent/docs/<NAME>.md` file's own section structure | Its own `rutter/templates/docs/<NAME>.template.md` |
 | Claude Code sub-agents (`.claude/agents/*.md`) | `rutter/templates/claude-agents/*.template.md` |
+| Codex sub-agents (`.codex/agents/*.toml`) | `rutter/templates/codex-agents/*.template.toml` |
 | Bash guard for those agents (`.claude/hooks/agent-bash-guard.{sh,py}`) | `rutter/templates/claude-hooks/` (cases in `tests/harness.py` `GUARD_CASES`); after editing, update the hash table in `rutter-doctor/SKILL.md` Check 10 (the self-check prints the new value) |
 | Adapter file body (`CLAUDE.md`, `GEMINI.md`, `.cursor/rules/project.mdc`, `.github/copilot-instructions.md`, `.windsurfrules`, `.clinerules`, `.aider.conventions.md`) | `rutter/templates/ADAPTER.template.md` |
 | `.agent/skills/INDEX.md` scaffold | `rutter/templates/SKILLS_INDEX.template.md` |

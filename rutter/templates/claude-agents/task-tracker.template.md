@@ -1,6 +1,6 @@
 ---
 name: task-tracker
-description: Records a task's status in a feature's TASKS.md (mark [x] complete, [~] in progress, or [!] blocked) and writes the completion or block note it is given. Use only after the user has approved the task; pass the task, the new status, the note text, the date, and the user's approval.
+description: Records a user-approved task status ([x], [~], [!]) and note in TASKS.md. Pass task, status, note, date, approval.
 tools: Read, Grep, Glob, Edit
 model: haiku
 ---

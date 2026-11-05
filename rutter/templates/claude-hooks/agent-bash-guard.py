@@ -7,7 +7,9 @@
 #   sh agent-bash-guard.sh <profile>
 #   review  read-only git only (code-reviewer, doc-updater)
 #   commit  review + `git add <paths>` and `git commit` (committer); no -A, amend, --no-verify
-#   runner  any command except a deny-list of destructive ones and git writes (test-runner)
+#   runner  any command except a deny-list of destructive ones and git writes (test-runner).
+#           The deny-list catches mistakes; it is NOT a sandbox (a test script can run anything).
+#           With .claude/hooks/agent-bash-allow.txt present, only listed prefixes run.
 # Any internal error also exits 2: Claude Code treats other non-zero exits as non-blocking.
 import json, os, re, shlex, sys
 
@@ -16,16 +18,27 @@ READ_SUBS = {"diff", "log", "status", "show", "rev-parse", "blame", "ls-files",
              "merge-base", "rev-list", "shortlog", "diff-tree"}
 COMMIT_SUBS = READ_SUBS | {"add", "commit"}
 RUNNER_BAN = {"rm", "sudo", "su", "doas", "curl", "wget", "dd", "mkfs", "chmod", "chown",
-              "kill", "killall", "pkill", "shutdown", "reboot", "ssh", "scp", "eval", "env", "xargs", "exec", "command", "builtin", "nohup", "-delete"}
+              "kill", "killall", "pkill", "shutdown", "reboot", "ssh", "scp", "eval", "env", "xargs", "command", "builtin", "nohup", "-delete",
+              "mv", "cp", "tee", "ln", "truncate", "rsync", "awk", "gawk", "mawk",
+              "-exec", "-execdir", "-ok", "-okdir", "-fprint", "-fprintf", "-fls"}
 GIT_WRITE = {"push", "commit", "add", "reset", "clean", "checkout", "switch", "restore",
              "rebase", "merge", "stash", "cherry-pick", "revert", "tag", "branch", "pull",
              "fetch", "rm", "mv", "apply", "am", "config", "remote", "gc", "prune",
              "worktree", "submodule", "init", "clone", "update-ref", "filter-branch"}
-CMD_BAN = {"source", "."}  # banned only as the command name (`ruff check .` is fine)
+CMD_BAN = {"source", ".", "exec", "install"}  # banned only as the command name: `ruff check .`,
+# `docker compose exec`, `bundle exec` and `npm install` are fine
 SHELLS = {"sh", "bash", "zsh", "dash", "ksh", "fish"}
 INLINE = {"python": "c", "node": "ep", "nodejs": "ep", "perl": "eE", "ruby": "e", "php": "r",
           "lua": "e"}
-SAFE_ENV = {"CI", "FORCE_COLOR", "NO_COLOR", "TERM", "TZ", "LANG", "LC_ALL", "NODE_ENV"}
+INLINE_LONG = {"node": ("--eval", "--print"), "nodejs": ("--eval", "--print")}
+SECRET_NAMES = re.compile(r"(^|/)(\.env($|\.)|id_[a-z0-9]+$|.*\.(pem|key|p12|pfx|keystore)$|"
+                          r"\.npmrc$|\.netrc$|credentials(\.|$)|.*secrets?\.[a-z]+$)", re.I)
+# VAR=value prefixes are allowed (DEBUG=1, PYTHONPATH=src, DATABASE_URL=...) except names that make
+# a program load or run other code, or change which shell/tool runs.
+UNSAFE_ENV = re.compile(r"^(LD_|DYLD_|GIT_|BASH|ENV$|PATH$|IFS$|SHELL$|PROMPT_COMMAND$|HOME$|"
+                        r"PYTHONSTARTUP$|PYTHONHOME$|PERL5LIB$|RUBYLIB$|EDITOR$|VISUAL$|PAGER$|"
+                        r"NPM_CONFIG_|.*_OPTIONS$|.*_OPTS$|.*OPT$)", re.I)
+SCRIPT_EXT = (".py", ".js", ".mjs", ".cjs", ".ts", ".rb", ".pl", ".php", ".lua")
 SEPARATORS = {"&&", ";", "||", "|"}
 PUNCT = set("();<>|&")
 COMMIT_VALUE_SHORT = set("mFCct")
@@ -98,15 +111,21 @@ def check_git(toks, allowed, cwd):
     for a in args:
         if is_opt(a, "--output"):
             deny("--output writes files and is not allowed")
+        if is_opt(a, "--ext-diff", 5):
+            deny("--ext-diff runs an external program and is not allowed")
     if sub == "add":
         for a in args:
             short = a.startswith("-") and not a.startswith("--")
             if a == "--":
                 continue
-            if (short and set(a[1:]) & set("Auf")) or is_opt(a, "--all") \
+            if (short and set(a[1:]) & set("Aufpie")) or is_opt(a, "--all") \
                     or is_opt(a, "--update") or is_opt(a, "--force") \
+                    or is_opt(a, "--patch") or is_opt(a, "--interactive") \
+                    or is_opt(a, "--edit") \
                     or a.startswith("--pathspec"):
                 deny("%s is not allowed; stage specific files by path" % a)
+            if not (short or a.startswith("--")) and SECRET_NAMES.search(a):
+                deny("%r looks like a secret or credential file; do not stage it" % a)
             if short or a.startswith("--"):
                 continue
             if a in {".", "./", "..", "*"} or a.startswith((":", "/", "../")) \
@@ -115,22 +134,40 @@ def check_git(toks, allowed, cwd):
                 deny("stage specific files by path, not %r (directories, globs, pathspec "
                      "magic and paths outside the repo are blocked)" % a)
     if sub == "commit":
-        skip = False
+        pending = None  # option waiting for its value in the next argument
         for a in args:
-            if skip:
-                skip = False
+            if pending is not None:
+                check_commit_value(pending, a)
+                pending = None
                 continue
             if any(is_opt(a, n, 3) for n in ("--amend", "--no-verify", "--all")):
                 deny("%s is not allowed" % a)
             if a.startswith("--"):
-                skip = a in COMMIT_VALUE_LONG
+                name, eq, val = a.partition("=")
+                if is_opt(name, "--template") or is_opt(name, "--author"):
+                    deny("%s is not allowed" % name)
+                if name in COMMIT_VALUE_LONG:
+                    if eq:
+                        check_commit_value(name, val)
+                    else:
+                        pending = name
             elif a.startswith("-") and len(a) > 1:
                 for j, ch in enumerate(a[1:], 1):
                     if ch in COMMIT_VALUE_SHORT:
-                        skip = j == len(a) - 1
+                        if ch == "t":
+                            deny("-t (template) is not allowed")
+                        if j == len(a) - 1:
+                            pending = "-" + ch
+                        else:
+                            check_commit_value("-" + ch, a[j + 1:])
                         break
                     if ch in "an":
                         deny("%s (amend/-a/-n style flags) is not allowed" % a)
+
+
+def check_commit_value(opt, val):
+    if opt in ("-F", "--file") and (val.startswith(("/", "~", "-")) or ".." in val.split("/")):
+        deny("%s must name a file inside the repo, not %r" % (opt, val))
 
 
 def strip_redirects(toks):
@@ -183,9 +220,9 @@ def check_runner(cmd, rows):
     segs.append(cur)
     for n, seg in enumerate(segs):
         while seg and re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", seg[0]):
-            if seg[0].split("=", 1)[0] not in SAFE_ENV:
-                deny("setting %s is not allowed (allowed: %s)"
-                     % (seg[0].split("=", 1)[0], ", ".join(sorted(SAFE_ENV))))
+            if UNSAFE_ENV.match(seg[0].split("=", 1)[0]):
+                deny("setting %s is not allowed (it changes what code runs); other VAR=value "
+                     "prefixes are fine" % seg[0].split("=", 1)[0])
             seg = seg[1:]
         if not seg:
             continue
@@ -194,15 +231,29 @@ def check_runner(cmd, rows):
             deny("'%s' is not allowed as a command" % seg[0])
         if seg[0].startswith("$"):
             deny("a variable cannot be used as the command name")
-        if base in SHELLS:
-            if n > 0:
-                deny("piping into a shell is not allowed")
-            if any(a.startswith("-") and not a.startswith("--") and "c" in a for a in seg[1:]):
-                deny("shell -c is not allowed")
-        letters = INLINE.get(re.sub(r"[\d.]+$", "", base))
-        if letters and any(a.startswith("-") and not a.startswith("--")
-                           and set(a[1:]) & set(letters) for a in seg[1:]):
-            deny("inline code (%s -%s) is not allowed" % (base, letters))
+        for k, tok in enumerate(seg):
+            tb = os.path.basename(tok)
+            if tb in SHELLS:
+                deny("shells are not allowed for the test-runner agent (run the documented "
+                     "command directly)")
+            interp = re.sub(r"[\d.]+$", "", tb)
+            letters = INLINE.get(interp)
+            if letters:
+                # interpreter flags end at the script or `-m module`; later flags are the script's
+                opts = []
+                for a in seg[k + 1:]:
+                    if a == "-m" or a == "--" or a.endswith(SCRIPT_EXT):
+                        break
+                    opts.append(a)
+                if any(a.startswith("-") and not a.startswith("--") and set(a[1:]) & set(letters)
+                       for a in opts):
+                    deny("inline code (%s -%s) is not allowed" % (tb, letters))
+                if any(a.split("=", 1)[0] in INLINE_LONG.get(interp, ()) for a in opts):
+                    deny("inline code (%s --eval/--print) is not allowed" % tb)
+            if tb == "sed" and any(a == "--in-place" or a.startswith("--in-place=")
+                                   or (a.startswith("-") and not a.startswith("--")
+                                       and "i" in a) for a in seg[k + 1:]):
+                deny("sed -i edits files and is not allowed")
         if rows is not None and not any(seg[:len(r)] == r for r in rows):
             deny("'%s' is not in .claude/hooks/agent-bash-allow.txt; add its prefix there if it "
                  "is a safe test/lint/build command" % " ".join(seg[:3]))
