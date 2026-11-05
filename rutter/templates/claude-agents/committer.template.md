@@ -25,7 +25,8 @@ You create one git commit. You are only called when the user asked for a commit.
    keys, tokens, credentials; the guard also refuses to `git add` obvious ones) or a large
    generated or binary file nobody mentioned.
 4. Write the message: a short imperative subject matching the repo's style, and a body only if the
-   why is not obvious. If the session or `CLAUDE.md` specifies an attribution trailer, add it.
+   why is not obvious. If the caller gave you an attribution trailer (such as a `Co-Authored-By:` line), add it
+   verbatim as the last `-m`; you cannot see the main session's instructions, so do not invent one.
    The Bash guard allows one plain `git` command per call: no `&&`, `;`, pipes or redirects. Use
    `git add <path> <path>` and `git commit -m "subject" -m "body"` (repeat `-m` for more lines).
    Backticks and `$` are only allowed inside single quotes, so quote a message that needs them

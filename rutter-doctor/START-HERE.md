@@ -49,7 +49,7 @@ Doctor runs ten non-destructive checks against your documentation. The core ones
 4. **Living-doc health** — validates required feature sections, checks for orphaned feature folders,
    and verifies skill/archive conventions.
 5. **Context budget** — warns if `AGENTS.md` is exceeding its line budget.
-6. **Migration fidelity**, 7. **Feature boundaries**, 8. **Source fingerprint**, 9. **Standard sections**, 10. **Sub-agents** — catch lost content after a migration, mis-scoped feature docs, a stale scaffold, an `AGENTS.md` missing standard sections newer Rutter versions add, and missing `.claude/agents/` files.
+6. **Migration fidelity**, 7. **Feature boundaries**, 8. **Source fingerprint**, 9. **Standard sections**, 10. **Sub-agents** — catch lost content after a migration, mis-scoped feature docs, a stale scaffold, an `AGENTS.md` missing standard sections newer Rutter versions add, and missing or malformed `.claude/agents/` and `.codex/agents/` files.
 
 Doctor **reports only and never writes**. When findings are reported, you remain at the helm —
 resolve them using standard Rutter shorthand:

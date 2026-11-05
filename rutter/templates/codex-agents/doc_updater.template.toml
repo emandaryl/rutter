@@ -1,7 +1,8 @@
 # rutter:begin
 # Rutter-managed: copied verbatim to .codex/agents/doc_updater.toml. Edit only outside the
-# rutter:begin/rutter:end markers. Cost: this agent inherits the session model unless `model` is
-# set here or `default_subagent_model` is set under [agents] in config.toml; pick a cheap one.
+# rutter:begin/rutter:end markers. Cost: this agent inherits the session model. To use a cheap
+# one, add `model = "..."` BELOW the end marker (a key inside the markers is overwritten on re-run),
+# or set `default_subagent_model` under [agents] in config.toml.
 # Codex has no per-agent sandbox, so "docs only" below is an instruction, not enforcement.
 name = "doc_updater"
 description = "Applies mechanical After-Every-Task doc edits after a multi-file change; flags judgment items. Pass a short summary of what changed."

@@ -66,7 +66,8 @@ file preserves intact markers.
 ### Procedure
 1. For each target file, find the **marker lines**: lines that consist of nothing but
    `<!-- rutter:begin -->` or `<!-- rutter:end -->` (ignoring surrounding whitespace) and that are
-   not inside a fenced code block.
+   not inside a fenced code block. In `.codex/agents/*.toml` the marker lines are
+   `# rutter:begin` and `# rutter:end` instead (TOML has no HTML comments); apply the same rules.
 2. Verify:
    - Exactly one begin-marker line and exactly one end-marker line exist.
    - The begin marker comes before the end marker.
@@ -144,7 +145,7 @@ remaining gaps so the user knows what needs human attention.
    - `TODO(you):`
    - `[FILL:`
    **Ignore text that Rutter copies verbatim.** The `.agent/docs/*-CREATION.md` guides are standard text throughout, so skip them entirely; and `AGENTS.md` contains `[STANDARD]` sections (Task
-   Files, App-Wide Docs, Feature Docs, Skills, Creating-a-Feature, After-Every-Task, and the
+   Files, App-Wide Docs, Feature Docs, Skills, Delegation, Creating-a-Feature, After-Every-Task, and the
    shared-abstractions rule) whose text
    legitimately mentions `TODO(you)` and `[FILL:` as instructions, usually inside code fences. Skip
    any hit that is (a) inside a fenced code block **within a `[STANDARD]` section or a verbatim guide**
@@ -208,8 +209,8 @@ This check verifies feature completeness, orphan directories, and valid archivin
 
 `AGENTS.md` is designed as a harbor chart, not an encyclopedia. Its budget applies to the
 project-specific sections only — roughly ~150–200 lines — per `AGENTS.template.md`'s own "Context
-Budget" note. The mandatory `[STANDARD]` process sections (Task Files, Feature Docs, Skills,
-Creating-a-Feature, After-Every-Task) are fixed, copied-verbatim overhead of roughly 185 lines and are expected on every file regardless of project size — they are not what this check is watching for. A typical, healthy `AGENTS.md` therefore lands around 265–365 lines total; that is normal, not bloat. (A repo scaffolded before the creation guides existed still carries the format specs inline and lands around 450–550 lines; it will warn here until Rutter is re-run, which moves those specs out to `.agent/docs/*-CREATION.md`.)
+Budget" note. The mandatory `[STANDARD]` process sections (Task Files, Feature Docs, Skills, Delegation,
+Creating-a-Feature, After-Every-Task) are fixed, copied-verbatim overhead of roughly 210 lines and are expected on every file regardless of project size — they are not what this check is watching for. A typical, healthy `AGENTS.md` therefore lands around 290–390 lines total; that is normal, not bloat. (A repo scaffolded before the creation guides existed still carries the format specs inline and lands around 450–550 lines; it will warn here until Rutter is re-run, which moves those specs out to `.agent/docs/*-CREATION.md`.)
 
 ### Procedure
 1. Count the total lines in `AGENTS.md`.
@@ -322,15 +323,20 @@ an older Rutter may predate some of them, so agents there miss rules newer runs 
 
 ---
 
-## Check 10: Claude Code Sub-Agents Present
+## Check 10: Sub-Agents Present (Claude Code and Codex)
 
-Rutter writes six sub-agent files to `.claude/agents/` alongside `CLAUDE.md`: `explorer`,
-`doc-updater`, `test-runner`, `task-tracker`, `committer` and `code-reviewer`. A repo scaffolded by an older Rutter
-lacks them, and one may have been deleted. Always `⚠ Warn` at worst, never `✗ Fail`.
+**Claude Code:** Rutter writes six sub-agent files to `.claude/agents/` alongside `CLAUDE.md`:
+`explorer`, `doc-updater`, `test-runner`, `task-tracker`, `committer` and `code-reviewer`, plus two
+guard files in `.claude/hooks/`. A repo scaffolded by an older Rutter lacks them, and one may have
+been deleted. **Codex:** the optional `.codex/agents/` set (`repo_explorer`, `test_runner`,
+`doc_updater`) is checked only if it exists. Always `⚠ Warn` at worst, never `✗ Fail`.
 
 ### Procedure
-1. Skip with `- Check 10: skipped (no CLAUDE.md with Rutter markers)` if `CLAUDE.md` is absent or
-   markerless: the agents only ship with a Rutter-made `CLAUDE.md`.
+1. Run the Claude steps (2 to 6 and 8) only if `CLAUDE.md` is present with Rutter markers: the
+   agents only ship with a Rutter-made `CLAUDE.md`. Otherwise print
+   `- Check 10 (Claude Code): skipped (no CLAUDE.md with Rutter markers)`. Run the Codex step (7)
+   whenever `.codex/agents/` exists. If neither applies, print `- Check 10: skipped (no CLAUDE.md
+   with Rutter markers, no .codex/agents/)`.
 2. Confirm each of the six files exists and starts with YAML frontmatter (first line `---`) that
    has a `name:` equal to the file's basename. A file with no markers is hand-written: leave it
    alone, count it as present.
@@ -347,7 +353,7 @@ lacks them, and one may have been deleted. Always `⚠ Warn` at worst, never `�
    | File | Expected SHA-256 (first 12 hex) |
    |---|---|
    | `agent-bash-guard.sh` | c7fe5853850c |
-   | `agent-bash-guard.py` | 9bbda55e6501 |
+   | `agent-bash-guard.py` | bcafded88ace |
 
    A mismatch means the copy was hand-edited or comes from a different Rutter version, so its
    protections may be weaker than documented: `⚠ Warn` and advise "re-run Rutter to refresh it, or
@@ -362,8 +368,11 @@ lacks them, and one may have been deleted. Always `⚠ Warn` at worst, never `�
    basename, a `description` and `developer_instructions`, and an intact `# rutter:begin` /
    `# rutter:end` pair (unless it has no markers, which means hand-written: leave it). A missing
    Codex file is never a warning, because they are optional. A file with a broken pair or missing
-   required key is a `⚠ Warn`.
-8. Report `✓ Pass` if all six are present and every check above held. Otherwise `⚠ Warn` naming each missing or malformed
+   required key is a `⚠ Warn`. Also `⚠ Warn` if a Rutter-managed Codex file sets `sandbox_mode`,
+   `approval_policy`, `mcp_servers` or `model`: the shipped templates leave those to the user, so it
+   was edited inside the markers.
+8. Report `✓ Pass` if all six Claude agents are present (when step 1 ran them) and every check
+   above held, including the Codex step if it ran. Otherwise `⚠ Warn` naming each missing or malformed
    file or hook and advise: "scaffolded by an older Rutter, or deleted; re-run Rutter to add it". A user
    who deliberately dropped one at Task 2 may ignore the warning.
 
@@ -404,7 +413,7 @@ At the conclusion of the audit, display a concise findings summary followed by a
   - api/routes.py, api/models.py, web/src/App.tsx: docs may be stale; re-run Rutter
 ⚠ Check 9: Standard Sections Present (1 missing)
   - AGENTS.md: no "After Every Task: Keep the Docs Current" section; re-run Rutter
-⚠ Check 10: Claude Code Sub-Agents Present (2 missing)
+⚠ Check 10: Sub-Agents Present (2 missing)
   - .claude/agents/committer.md, .claude/agents/test-runner.md: not found; re-run Rutter
 
 Overall: 1 check passed · 6 warnings · 2 failures

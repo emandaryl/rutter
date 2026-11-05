@@ -3,7 +3,8 @@
 # lines freely: Rutter only rewrites this file while this first line is present.
 #
 # One command prefix per line. The test-runner agent may run a command only if it starts with one
-# of these (each part of an `a && b` chain is checked). Delete the file to fall back to the
+# of these (each part of an `a && b` chain is checked; `cd`, `time`, `timeout N` and read-only
+# filters after a pipe such as `| tail -50` or `| grep x` need no line). Delete the file to fall back to the
 # deny-list only. Example lines (replace with the real ones):
 # npm test
 # npm run lint

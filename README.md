@@ -28,6 +28,15 @@ Every generated file (`AGENTS.md`, each adapter, each `.agent/docs/` file) is wr
 change, a new dependency, a new convention — updates only the content it originally wrote and
 leaves anything hand-edited outside those markers untouched.
 
+**Token-saving sub-agents (optional, listed in the Task 2 proposal so you can drop any).** For
+Claude Code, Rutter also writes six small agents to `.claude/agents/` (mostly on Haiku: search, test
+runs that return only failures, doc updates, commits, task status; plus a Sonnet code reviewer) and
+a Bash guard hook to `.claude/hooks/` that keeps the Bash-using ones to safe commands. For Codex it
+can write three agents to `.codex/agents/` (no guard; they follow their instructions only). The
+`AGENTS.md` "Delegation & Token Efficiency" section tells every tool when delegating pays off and
+when to just do the work inline. Rutter never edits your tool settings; the guard is a safety net,
+not a sandbox, and needs `sh` and `python3`.
+
 Full behavior spec: [`rutter/SKILL.md`](rutter/SKILL.md). Maintaining this repo? See
 [`CONTRIBUTING.md`](CONTRIBUTING.md) for the rules and decisions behind it.
 

@@ -31,8 +31,10 @@ SHELLS = {"sh", "bash", "zsh", "dash", "ksh", "fish"}
 INLINE = {"python": "c", "node": "ep", "nodejs": "ep", "perl": "eE", "ruby": "e", "php": "r",
           "lua": "e"}
 INLINE_LONG = {"node": ("--eval", "--print"), "nodejs": ("--eval", "--print")}
-SECRET_NAMES = re.compile(r"(^|/)(\.env($|\.)|id_[a-z0-9]+$|.*\.(pem|key|p12|pfx|keystore)$|"
-                          r"\.npmrc$|\.netrc$|credentials(\.|$)|.*secrets?\.[a-z]+$)", re.I)
+SECRET_NAMES = re.compile(
+    r"(^|/)(\.env(\.(?!(example|sample|template|dist)$)[^/]*)?$|id_[a-z0-9]+$|"
+    r"[^/]*\.(pem|key|p12|pfx|keystore)$|\.npmrc$|\.netrc$|"
+    r"(credentials|secrets?)(\.(json|ya?ml|toml|ini|txt|env|properties|xml))?$)", re.I)
 # VAR=value prefixes are allowed (DEBUG=1, PYTHONPATH=src, DATABASE_URL=...) except names that make
 # a program load or run other code, or change which shell/tool runs.
 UNSAFE_ENV = re.compile(r"^(LD_|DYLD_|GIT_|BASH|ENV$|PATH$|IFS$|SHELL$|PROMPT_COMMAND$|HOME$|"
@@ -40,6 +42,10 @@ UNSAFE_ENV = re.compile(r"^(LD_|DYLD_|GIT_|BASH|ENV$|PATH$|IFS$|SHELL$|PROMPT_CO
                         r"NPM_CONFIG_|.*_OPTIONS$|.*_OPTS$|.*OPT$)", re.I)
 SCRIPT_EXT = (".py", ".js", ".mjs", ".cjs", ".ts", ".rb", ".pl", ".php", ".lua")
 SEPARATORS = {"&&", ";", "||", "|"}
+# Allowlist mode: these need no entry in agent-bash-allow.txt (they only read, or only navigate).
+FILTERS = {"head", "tail", "grep", "egrep", "fgrep", "wc", "sort", "uniq", "cut", "tr", "cat",
+           "cd", "true", "echo"}
+WRAPPERS = {"time", "nice", "timeout"}
 PUNCT = set("();<>|&")
 COMMIT_VALUE_SHORT = set("mFCct")
 COMMIT_VALUE_LONG = ("--message", "--file", "--reuse-message", "--reedit-message", "--author",
@@ -97,13 +103,22 @@ def tokens(cmd, punct):
     lex = shlex.shlex(cmd, posix=True, punctuation_chars=punct)
     lex.whitespace_split = True
     lex.commenters = ""  # shlex would otherwise drop everything after a mid-word '#'
-    return list(lex)
+    try:
+        return list(lex)
+    except ValueError as exc:
+        deny("could not parse the command (%s); close every quote and avoid a trailing "
+             "backslash" % exc)
 
 
 def check_git(toks, allowed, cwd):
     if len(toks) < 2 or toks[0] != "git":
         deny("only git commands are allowed for this agent")
-    sub, args = toks[1], toks[2:]
+    rest = toks[1:]
+    while rest and rest[0] in ("--no-pager", "--no-optional-locks"):
+        rest = rest[1:]  # harmless global flags agents add by habit
+    if not rest:
+        deny("git needs a subcommand")
+    sub, args = rest[0], rest[1:]
     if sub.startswith("-"):
         deny("git global options before the subcommand are not allowed")
     if sub not in allowed:
@@ -254,7 +269,13 @@ def check_runner(cmd, rows):
                                    or (a.startswith("-") and not a.startswith("--")
                                        and "i" in a) for a in seg[k + 1:]):
                 deny("sed -i edits files and is not allowed")
-        if rows is not None and not any(seg[:len(r)] == r for r in rows):
+        if rows is not None and not (n > 0 and seg[0] in FILTERS) and seg[0] != "cd":
+            core = seg
+            while core and core[0] in WRAPPERS:  # `timeout 60 npm test` matches `npm test`
+                core = core[2:] if core[0] == "timeout" else core[1:]
+        else:
+            core = None
+        if core is not None and not any(core[:len(r)] == r for r in rows):
             deny("'%s' is not in .claude/hooks/agent-bash-allow.txt; add its prefix there if it "
                  "is a safe test/lint/build command" % " ".join(seg[:3]))
     for i, t in enumerate(toks):

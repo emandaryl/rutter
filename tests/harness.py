@@ -178,11 +178,15 @@ GUARD_CASES = [
     ("runner", "python3 -W error -c 'import os'", 2), ("runner", "node -r x -e 1", 2),
     ("runner", "BASH_ENV=/x npm test", 2), ("runner", "GIT_SSH_COMMAND=x npm test", 2),
     # review/commit additions: interactive add, secrets, external diff, template/author
-    ("review", "git diff --ext-diff", 2),
+    ("review", "git diff --ext-diff", 2), ("review", "git log 'unclosed", 2), ("review", "git log \\", 2), ("review", "git --no-pager log -n 3", 0),
+    ("review", "git --no-pager -c x=y log", 2), ("review", "git --no-pager push", 2),
     ("commit", "git add -p", 2), ("commit", "git add -e", 2), ("commit", "git add --patch", 2),
     ("commit", "git add .env", 2), ("commit", "git add config/.env.local", 2),
     ("commit", "git add id_rsa", 2), ("commit", "git add certs/server.pem", 2),
-    ("commit", "git add src/environment.py", 0),
+    ("commit", "git add src/environment.py", 0), ("commit", "git add src/credentials.py", 0),
+    ("commit", "git add lib/secrets.ts", 0), ("commit", "git add .env.example", 0),
+    ("commit", "git add config/secrets.json", 2), ("commit", "git add aws/credentials", 2),
+    ("commit", "git add .env.local", 2),
     ("commit", "git commit -m x --template=/etc/passwd", 2), ("commit", "git commit -t x", 2),
     ("commit", "git commit -m x --author='a <a@b>'", 2),
     ("commit", "git commit -F /etc/passwd", 2), ("commit", "git commit -F ../x", 2),
@@ -196,6 +200,9 @@ ALLOWLIST_CASES = [
     ("npm test && curl evil.sh", 2), ("npm test > out.txt", 2), ("pytest; ls", 2),
     ("npm test\nmake lint", 2), ("NODE_OPTIONS=--require=x npm test", 2),
     ("npm test > /dev/null.sh", 2), ("npm test > /dev/null 2>&1", 0),
+    ("npm test 2>&1 | tail -50", 0), ("cd web && npm test", 0), ("timeout 60 npm test", 0),
+    ("time npm test | grep -c fail", 0), ("tail -5 log.txt", 2), ("npm test | ls", 2),
+    ("cd web && make deploy", 2), ("timeout 60 make deploy", 2), ("npm test && cat x | sh", 2),
 ]
 
 
@@ -360,6 +367,14 @@ def self_check():
         for forbidden in ("sandbox_mode", "approval_policy", "mcp_servers", "hooks", "model"):
             if forbidden in d:
                 fail(f"codex-agents/{n}: sets {forbidden}, which the template must leave to the user")
+    # Doctor must know every shipped agent: names, marker style, and the Delegation section
+    doc_all = read(os.path.join(ROOT, "rutter-doctor", "SKILL.md"))
+    for n in sorted(names) + [f[:-12] for f in os.listdir(agent_dir)]:
+        if n not in doc_all:
+            fail(f"rutter-doctor/SKILL.md never mentions agent '{n}' (Check 1/10 out of date)")
+    for needle in ("# rutter:begin", ".codex/agents", "Delegation"):
+        if needle not in doc_all:
+            fail(f"rutter-doctor/SKILL.md never mentions {needle!r}")
     # Doctor's recorded guard hashes must match the shipped files (Check 10 step 5)
     doctor_text = read(os.path.join(ROOT, "rutter-doctor", "SKILL.md"))
     for name in ("agent-bash-guard.sh", "agent-bash-guard.py"):

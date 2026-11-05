@@ -1,7 +1,8 @@
 # rutter:begin
 # Rutter-managed: copied verbatim to .codex/agents/repo_explorer.toml. Edit only outside the
-# rutter:begin/rutter:end markers. Cost: this agent inherits the session model unless `model` is
-# set here or `default_subagent_model` is set under [agents] in config.toml; pick a cheap one.
+# rutter:begin/rutter:end markers. Cost: this agent inherits the session model. To use a cheap
+# one, add `model = "..."` BELOW the end marker (a key inside the markers is overwritten on re-run),
+# or set `default_subagent_model` under [agents] in config.toml.
 name = "repo_explorer"
 description = "Read-only search across many files (where is X, what touches Y). Returns a short answer with path:line refs, no file dumps."
 model_reasoning_effort = "low"

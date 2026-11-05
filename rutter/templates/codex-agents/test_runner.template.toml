@@ -1,7 +1,8 @@
 # rutter:begin
 # Rutter-managed: copied verbatim to .codex/agents/test_runner.toml. Edit only outside the
-# rutter:begin/rutter:end markers. Cost: this agent inherits the session model unless `model` is
-# set here or `default_subagent_model` is set under [agents] in config.toml; pick a cheap one.
+# rutter:begin/rutter:end markers. Cost: this agent inherits the session model. To use a cheap
+# one, add `model = "..."` BELOW the end marker (a key inside the markers is overwritten on re-run),
+# or set `default_subagent_model` under [agents] in config.toml.
 # Codex has no per-agent sandbox or command guard, so the rules below are instructions only.
 name = "test_runner"
 description = "Runs tests, lint or build and returns only failures, so long logs stay out of the main context. Pass what to run."

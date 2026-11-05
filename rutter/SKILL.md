@@ -227,8 +227,8 @@ while its first line still says `rutter-managed`; never overwrite the user's add
 asking.
 
 Skip an agent file that already exists without markers (step 0 rules), list the set in
-Task 2's proposal, and let the user drop any. Other tools get the same guidance from the
-`AGENTS.md` section alone.
+Task 2's proposal, and let the user drop any. Codex has its own optional set (group 5); other
+tools get the same guidance from the `AGENTS.md` section alone.
 
 **5. Codex sub-agents — optional, pre-ticked when `.codex/` exists.** Codex creates no adapter
 file, so list this as its own checklist item in Task 2. When chosen, copy
@@ -238,9 +238,10 @@ reviewer for Codex). Verbatim copies wrapped in `# rutter:begin` / `# rutter:end
 (TOML has no HTML comments); step 0 marker rules apply, and a markerless existing file is left
 alone. Tell the user in the Final report: (a) Codex custom agents cannot declare their own hooks or
 sandbox, so the Claude Bash guard is not shipped and these agents are limited by their
-instructions only; (b) the files set no `model`, so they inherit the session model — set
-`default_subagent_model` under `[agents]` in `config.toml` to a cheap one, which is where the
-saving comes from; (c) Codex only spawns sub-agents when asked, and `AGENTS.md` asks for them by
+instructions only; (b) the files set no `model`, so they inherit the session model — to use a cheap one, set
+`default_subagent_model` under `[agents]` in `config.toml`, or add `model = "..."` below a file's
+`# rutter:end` line (a key inside the markers is overwritten on re-run); that is where the saving
+comes from; (c) Codex only spawns sub-agents when asked, and `AGENTS.md` asks for them by
 name. Verify the TOML field names against Codex's current sub-agent docs if a run reports that an
 agent failed to load.
 
@@ -481,7 +482,7 @@ tasks in the table below **in order, one at a time**:
 | Task | Proposes |
 |---|---|
 | 1. Discovery / Intake | The detected mode (step 1) plus its findings: existing → detected stack, layout, commands to confirm or correct; greenfield → the intake questions (step 3b). This task's answers become the grounding for every task after it. |
-| 2. `AGENTS.md` + adapters + creation guides | A two-line summary of what `AGENTS.md` will document, which adapters (step 2) will be created alongside it, and that the three standard creation guides (`FEATURE-CREATION.md`, `TASK-CREATION.md`, `SKILL-CREATION.md` in `.agent/docs/`) will be written verbatim from templates (minus any whose format an existing skill or doc already owns, per step 3a, which `AGENTS.md` will point at instead). Written together since adapters are trivial pointers and the guides are verbatim standard text — neither has unique content of its own. The proposal always (a) names the core adapters (`CLAUDE.md`, `GEMINI.md`), (b) states which tools are covered natively by `AGENTS.md` (Codex CLI, Cursor, Antigravity, etc.), and (c) lists the optional adapters (Copilot/Windsurf/Roo-Cline/Aider) as a checklist, pre-ticked where step 2 found evidence, and asks which to include — a plain "proceed" means core plus the pre-ticked ones. |
+| 2. `AGENTS.md` + adapters + creation guides | A two-line summary of what `AGENTS.md` will document, which adapters (step 2) will be created alongside it, and that the three standard creation guides (`FEATURE-CREATION.md`, `TASK-CREATION.md`, `SKILL-CREATION.md` in `.agent/docs/`) will be written verbatim from templates (minus any whose format an existing skill or doc already owns, per step 3a, which `AGENTS.md` will point at instead). Written together since adapters are trivial pointers and the guides are verbatim standard text — neither has unique content of its own. The proposal always (a) names the core adapters (`CLAUDE.md`, `GEMINI.md`), (b) states which tools are covered natively by `AGENTS.md` (Codex CLI, Cursor, Antigravity, etc.), and (c) lists the optional adapters (Copilot/Windsurf/Roo-Cline/Aider) as a checklist, pre-ticked where step 2 found evidence, and asks which to include — a plain "proceed" means core plus the pre-ticked ones. It also lists the six Claude Code sub-agents (step 2, group 4) with the Bash guard files, and the three Codex sub-agents (group 5) as a checklist item, pre-ticked only when `.codex/` exists; the user can drop any. |
 | 3…N. One task per selected `.agent/docs/` file | In this fixed order: `OVERVIEW.md`, `ARCHITECTURE.md`, then any of `SETUP/TESTING/SECURITY/DECISIONS/UI/API/FLOWS/DEPLOYMENT.md` selected in step 4. Each proposal is a two-line summary of what that specific doc will say — not the whole set at once. |
 | N+1. `.agent/features/` scaffold | Existing: the confirmed feature breakdown from step 3a (and any pre-existing `.agent/features/` content) — one line per feature: slug, scope, owning files. Greenfield: the initial feature slice(s) worked out in step 3b — name each in one line. |
 | N+2. `.agent/skills/` scaffold | Confirms `INDEX.md` will be created (header row only, unless step 3a turned up something worth seeding). |
