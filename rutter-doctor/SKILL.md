@@ -4,15 +4,18 @@ description: >
   Audit and health-check an already-scaffolded AI-agent context system (AGENTS.md, adapters,
   .agent/docs/, .agent/features/, .agent/skills/) for drift, broken markers, dead references,
   ungrounded gaps, missing feature sections, orphaned feature folders, and context budget bloat.
-  Reports findings without modifying files. Use when the user asks to "run rutter doctor",
+  Read-only by default: reports findings without modifying files. Only when the user explicitly asks
+  to fix ("rutter doctor --fix", "run rutter doctor and fix it") does it enter Fix Mode and apply
+  low-risk repairs after approval. Use when the user asks to "run rutter doctor",
   "audit AGENTS.md", "check for doc drift", "verify rutter markers", "is my AGENTS.md stale",
   or health-check agent docs in an existing repo.
 ---
 
 # Rutter Doctor
 
-A read-only diagnostic skill that audits an existing `AGENTS.md` context system for drift, rot, and
-structural breaks.
+A diagnostic skill that audits an existing `AGENTS.md` context system for drift, rot, and
+structural breaks. It is **read-only by default**; an opt-in [Fix Mode](#fix-mode-opt-in) can apply
+a narrow set of low-risk repairs after the user approves them.
 
 While `rutter/SKILL.md` step 7 self-reconciles links immediately following a scaffold run, **Doctor's
 job is catching drift that accumulates afterward** — as features get added or deleted by hand, files
@@ -20,10 +23,12 @@ move, markers get accidentally edited, and context files grow over time.
 
 ## Core Invariants
 
-1. **Doctor reports; it never writes.** Doctor never silently repairs a broken marker, deletes a
-   stale task file, or modifies documentation. Silently mutating context violates Rutter's core
-   guarantee that the user remains at the helm. All repairs must be explicit follow-up actions
-   approved by the user.
+1. **Doctor reports; it writes only in Fix Mode, and only with approval.** Without an explicit fix
+   request, Doctor never repairs a marker, deletes a stale task file, or modifies documentation.
+   Silently mutating context violates Rutter's core guarantee that the user remains at the helm.
+   Fix Mode is entered only when the user asks for fixes in so many words; even then, every change is
+   shown first and applied only after the user approves it. Never infer permission to fix from "run
+   rutter doctor", "audit" or "check".
 2. **Tool-agnostic execution.** Every check has a clear, manual grep/read-based procedure that works
    identically across any coding assistant (Claude Code, Cursor, Copilot, Gemini CLI, Windsurf,
    Roo/Cline, Aider) without requiring local scripts or executables.
@@ -429,10 +434,77 @@ count.
 
 ---
 
+## Fix Mode (opt-in)
+
+Fix Mode lets Doctor treat what it diagnoses, but only the mechanical cases where the correct answer
+is determined by the repo itself. Anything that needs a judgment call stays with the user.
+
+### Entering Fix Mode
+Enter only when the user explicitly asks for fixes: "rutter doctor --fix", "run rutter doctor and
+fix it", "fix the doctor findings". A plain audit request stays read-only (Core Invariant 1).
+
+### Procedure
+1. **Diagnose first.** Run all ten checks exactly as above and print the normal report. Nothing is
+   written during this step.
+2. **Safety gate.** If the repo is a git repository, run `git status --short` on the files a fix
+   would touch. If any has uncommitted changes, say so and ask before including it (the diff would
+   mix the user's edits with Doctor's). If it is not a git repository, tell the user there is no
+   easy undo and ask whether to continue.
+3. **Classify each finding** using the table below and print a fix plan: for every proposed change,
+   the file, the line(s), the before and after text, and the reason.
+4. **Approval.**
+   - **Tier A (mechanical):** ask once for the whole batch ("Apply these N fixes?"). The user may
+     approve all, none, or a subset.
+   - **Tier B (needs a decision):** ask per item, offering the concrete options. Never pick for the
+     user.
+   - **Tier C (never auto-fixed):** list as "not fixable by Doctor" with the recommended next step.
+5. **Apply** only the approved changes, editing as narrowly as possible. Never touch text outside
+   what the fix names, and never edit inside a `rutter:begin/end` block except where a Tier A row
+   below says so. Do not commit.
+6. **Verify.** Re-run only the checks that produced the fixed findings, plus Check 1 on every file
+   written. Print a before/after line per check (e.g. `✗ Check 2 → ✓ Check 2`) and anything that
+   still fails. If a fix introduced a new failure, revert that change and report it.
+7. Remind the user to review `git diff` before committing.
+
+### Fix classification
+
+| Check | Finding | Tier | Fix |
+|---|---|---|---|
+| 1 | Marker lines out of order, where swapping the two lines yields a valid block | A | Swap the two marker lines |
+| 1 | An exact duplicate marker line directly adjacent to its twin | A | Remove the duplicate |
+| 1 | One marker missing, markers duplicated apart from each other, or empty block | C | Doctor cannot know where the block belongs; re-run Rutter |
+| 1 | `CLAUDE.md` / `GEMINI.md` never mentions `AGENTS.md` | B | Offer to append the one-line pointer |
+| 2 | Dead path whose basename exists at exactly one other location in the repo | A | Update the path to that location |
+| 2 | Dead path with zero or several candidate targets | B | Ask: retarget, remove the reference, or leave it |
+| 2 | Task Files table row whose `TASKS.md` is gone and whose feature has no `archive/` entry | B | Offer to remove the row |
+| 4 | `FEATURE.md` missing a required `##` header | A | Insert the header in its required order with a body of `TODO(you): <what belongs here>` (this shows up in Check 3 until a human fills it) |
+| 4 | Orphaned feature folder without `FEATURE.md` | B | Ask: create a stub `FEATURE.md`, delete the folder, or leave it |
+| 4 | Invalid archive filename | B | Suggest a canonical name; the user confirms it |
+| 4 | `TASKS.md` missing structure | B | Show what is missing; the user decides |
+| 3, 5, 6, 7, 8 | Gaps, budget, migration, boundaries, staleness | C | Judgment or fresh facts are needed: answer the `TODO(you)`, move content, or re-run Rutter |
+| 9, 10 | Missing standard sections, missing sub-agents or hooks, guard hash mismatch | C | Needs Rutter's templates; re-run Rutter. Doctor never writes agent or hook files |
+
+### Fix Mode rules
+- **Never invent facts.** A fix may restructure or retarget; it may not add claims about the project.
+  Unknowns stay as `TODO(you):`.
+- **Never delete** a file or folder without per-item (Tier B) approval, and never touch
+  `AGENTS.old.md` or `.agent/.rutter-state.json`.
+- **Never write sub-agent files, hook files or the guard-hash table.** They are security-relevant
+  (Check 10) and come only from Rutter.
+- **One pass.** Do not loop fix, re-check, fix. After the verify step, report what remains.
+- If nothing is in Tier A or B, say "nothing for Doctor to fix" and stop.
+
+---
+
 ## Actionable Remediation (Human-at-the-Helm)
 
-Doctor does not edit files automatically. To resolve findings, guide your assistant using Rutter's
-standard shorthand commands:
+Outside Fix Mode, Doctor does not edit files. To resolve findings, guide your assistant using
+Rutter's standard shorthand commands, or ask Doctor to fix them:
+
+- **To let Doctor apply the low-risk repairs itself:**
+  ```
+  Run rutter doctor and fix it.
+  ```
 
 - **To fix dead feature references or missing gotchas:**
   ```

@@ -2,7 +2,8 @@
 
 Rutter Doctor audits an existing project's AI-agent context system (`AGENTS.md`, adapters,
 `.agent/docs/`, `.agent/features/`, `.agent/skills/`) for drift, broken markers, dead links, and
-budget bloat — completely read-only.
+budget bloat. It is read-only by default; ask it to fix and it will apply low-risk repairs after you
+approve them (see "Fix Mode" below).
 
 This file is for you, the human. The actual instructions an agent follows live in `SKILL.md` — point
 an agent at it or install it into your skills directory.
@@ -51,9 +52,23 @@ Doctor runs ten non-destructive checks against your documentation. The core ones
 5. **Context budget** — warns if `AGENTS.md` is exceeding its line budget.
 6. **Migration fidelity**, 7. **Feature boundaries**, 8. **Source fingerprint**, 9. **Standard sections**, 10. **Sub-agents** — catch lost content after a migration, mis-scoped feature docs, a stale scaffold, an `AGENTS.md` missing standard sections newer Rutter versions add, and missing or malformed `.claude/agents/` and `.codex/agents/` files.
 
-Doctor **reports only and never writes**. When findings are reported, you remain at the helm —
-resolve them using standard Rutter shorthand:
+By default Doctor **reports only and never writes**. When findings are reported, you remain at the
+helm — resolve them using standard Rutter shorthand:
 
 ```
 Read AGENTS, {feature} and fix {issue}
 ```
+
+## Fix Mode
+
+Say "run rutter doctor and fix it" and Doctor audits first, then sorts findings into three tiers:
+
+- **A — mechanical** (e.g. a link whose file moved to exactly one new place, a missing required
+  `FEATURE.md` header): shown as a diff, approved once as a batch.
+- **B — needs your decision** (orphaned folders, ambiguous dead links, bad archive names): asked one
+  at a time with concrete options.
+- **C — never auto-fixed** (gaps, budget, staleness, missing sub-agents/hooks, unpaired markers):
+  listed with the recommended next step, usually re-running Rutter.
+
+Doctor edits narrowly, never invents facts, never commits, re-checks what it touched, and asks first
+if the files have uncommitted changes. Review `git diff` afterwards.
