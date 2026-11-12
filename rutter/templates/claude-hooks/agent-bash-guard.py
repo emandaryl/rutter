@@ -242,6 +242,9 @@ def check_runner(cmd, rows):
         if not seg:
             continue
         base = os.path.basename(seg[0])
+        ci = 0  # index of the real command: `timeout 60 sort -o x` runs sort
+        while ci < len(seg) and seg[ci] in WRAPPERS:
+            ci += 2 if seg[ci] == "timeout" else 1
         if seg[0] in CMD_BAN:
             deny("'%s' is not allowed as a command" % seg[0])
         if seg[0].startswith("$"):
@@ -269,6 +272,24 @@ def check_runner(cmd, rows):
                                    or (a.startswith("-") and not a.startswith("--")
                                        and "i" in a) for a in seg[k + 1:]):
                 deny("sed -i edits files and is not allowed")
+            # filters allowed after a pipe can still write: `sort -o FILE`, `uniq IN OUT`
+            if k == ci and tb == "sort" and any(
+                    a.split("=", 1)[0] in ("--output", "--compress-program")
+                    or (a.startswith("-") and not a.startswith("--") and "o" in a[1:])
+                    for a in seg[k + 1:]):
+                deny("sort -o/--output writes a file and --compress-program runs a program; "
+                     "not allowed")
+            if k == ci and tb == "uniq":
+                operands, skip = 0, False
+                for a in seg[k + 1:]:
+                    if skip:
+                        skip = False
+                    elif a in ("-f", "-s", "-w", "--skip-fields", "--skip-chars", "--check-chars"):
+                        skip = True
+                    elif not a.startswith("-"):
+                        operands += 1
+                if operands >= 2:
+                    deny("uniq INPUT OUTPUT writes OUTPUT and is not allowed")
         if rows is not None and not (n > 0 and seg[0] in FILTERS) and seg[0] != "cd":
             core = seg
             while core and core[0] in WRAPPERS:  # `timeout 60 npm test` matches `npm test`

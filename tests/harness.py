@@ -167,6 +167,17 @@ GUARD_CASES = [
     ("runner", "sed -n 1,5p f", 0), ("runner", "cat f | tee g", 2), ("runner", "cp a b", 2),
     ("runner", "mv a b", 2), ("runner", "awk 'BEGIN{system(\"id\")}'", 2),
     ("runner", "git diff", 0),
+    # filters allowed after a pipe that can still write a file or run a program
+    ("runner", "npm test | sort -o src/index.ts", 2), ("runner", "sort -o out in", 2),
+    ("runner", "sort --output=out in", 2), ("runner", "sort --output out in", 2),
+    ("runner", "sort -no out in", 2), ("runner", "sort --compress-program=sh in", 2),
+    ("runner", "cat x | uniq in out", 2), ("runner", "uniq in out", 2),
+    ("runner", "timeout 60 sort -o out in", 2), ("runner", "uniq -f 2 in out", 2),
+    ("runner", "sort in | uniq -c", 0), ("runner", "uniq -f 2 in", 0),
+    ("runner", "grep -rn foo . | sort -u", 0), ("runner", "sort -k2,2 -t, in", 0),
+    ("runner", "npm test 2>&1 | sort | uniq -c | head", 0),
+    ("runner", "grep sort -o file", 0), ("runner", "grep uniq a b", 0),
+    ("runner", "timeout 60 grep uniq a b", 0),
     # ordinary commands that must not be blocked (false positives found in review)
     ("runner", "npm install", 0), ("runner", "pip install -e .", 0), ("runner", "cargo install --path .", 0),
     ("runner", "docker compose exec app pytest", 0), ("runner", "bundle exec rspec", 0),

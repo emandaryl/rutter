@@ -358,7 +358,7 @@ been deleted. **Codex:** the optional `.codex/agents/` set (`repo_explorer`, `te
    | File | Expected SHA-256 (first 12 hex) |
    |---|---|
    | `agent-bash-guard.sh` | c7fe5853850c |
-   | `agent-bash-guard.py` | bcafded88ace |
+   | `agent-bash-guard.py` | 6f6e6db4eef1 |
 
    A mismatch means the copy was hand-edited or comes from a different Rutter version, so its
    protections may be weaker than documented: `⚠ Warn` and advise "re-run Rutter to refresh it, or
