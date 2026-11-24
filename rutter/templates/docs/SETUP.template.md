@@ -19,6 +19,14 @@ read from the actual manifest/lockfile and any `.env.example`-style file.]
 [FILL: the real command(s) to run the project locally — dev server, emulator/simulator launch,
 `npm run dev`, etc. — plus any required environment variables and where they're configured.]
 
+## Branching
+
+[FILL: only if the repo's branches or CONTRIBUTING doc show a clear workflow. For trunk-based work,
+write: a single main branch plus short-lived branches, often paired with stacked PRs or isolated
+worktrees; branch off main, merge back and delete the branch; no `develop`, `master` or long-lived
+`release/*` branch. For anything else (gitflow, release branches), record what the repo actually
+does. Omit the section if nothing in the repo shows it.]
+
 ## Common Issues
 
 [FILL: only if the repo already documents known setup gotchas (a README troubleshooting section,

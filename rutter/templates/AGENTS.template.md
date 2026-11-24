@@ -106,6 +106,11 @@ to actively look for, each only if there's real evidence:
   against a nullable/untyped boundary (legacy models, external API responses).
 - **Preferred pattern for a recurring task type** — e.g. how new API endpoints get added, with a
   ✅/❌ snippet, if the codebase shows a clear preferred way that supersedes an older one.
+- **Branching workflow** — if the repo's branches show it (a single `main`/`master` plus short-lived
+  branches, no long-lived `develop` or `release/*`), state it as trunk-based: a single main branch
+  with short-lived branches, often paired with stacked PRs or isolated worktrees; branch off main,
+  merge back and delete the branch. If the repo uses another model (gitflow, release branches),
+  record that instead. Never impose trunk-based on a repo that does not use it.
 - **Framework preview/story mandate** — if the codebase already has UI previews/stories in use
   (Compose `@Preview`, SwiftUI `#Preview`, Storybook, Flutter golden tests), document the
   convention and whether it's treated as mandatory.
